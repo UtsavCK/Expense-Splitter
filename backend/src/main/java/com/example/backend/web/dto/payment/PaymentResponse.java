@@ -1,0 +1,13 @@
+package com.example.backend.web.dto.payment;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+public record PaymentResponse(
+        Long paymentId,
+        Long paidBy,
+        Long paidTo,
+        BigDecimal amount,
+        LocalDate paymentDate,
+        String notes
+) {}
