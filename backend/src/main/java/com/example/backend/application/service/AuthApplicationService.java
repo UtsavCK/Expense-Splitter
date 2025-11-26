@@ -36,7 +36,8 @@ public class AuthApplicationService implements AuthUseCase {
     return new LoginResponseDto(
             token,
             user.getUserId(),
-            user.getEmail()
+            user.getEmail(),
+            user.getName()
     );
   }
 
