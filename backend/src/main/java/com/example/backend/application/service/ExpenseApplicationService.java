@@ -76,4 +76,19 @@ public class ExpenseApplicationService implements ExpenseUseCase {
 
     return ExpenseMapper.toDto(savedExpense, partDtos);
   }
+
+  @Override
+  public List<ExpenseResponseDto> getExpensesByGroup(Long groupId) {
+    var expenses = expenseRepository.findByGroupId(groupId);
+
+    return expenses.stream()
+            .map(expense -> {
+              var participants = participantRepository.findByExpenseId(expense.getExpenseId());
+              var participantDtos = participants.stream()
+                      .map(ExpenseMapper::toParticipantDto)
+                      .toList();
+              return ExpenseMapper.toDto(expense, participantDtos);
+            })
+            .toList();
+  }
 }

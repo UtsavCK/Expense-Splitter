@@ -3,23 +3,33 @@ package com.example.backend.web.controller;
 import com.example.backend.application.usecase.ExpenseUseCase;
 import com.example.backend.web.dto.expense.*;
 import com.example.backend.web.mapper.ExpenseWebMapper;
-import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/expenses")
+@RequestMapping("/api/expenses")
 public class ExpenseController {
 
-  private final ExpenseUseCase expenses;
+  private final ExpenseUseCase service;
 
-  public ExpenseController(ExpenseUseCase expenses) {
-    this.expenses = expenses;
+  public ExpenseController(ExpenseUseCase service) {
+    this.service = service;
   }
 
   @PostMapping
-  public ExpenseResponse create(@Valid @RequestBody ExpenseCreateRequest req) {
-    return ExpenseWebMapper.toWeb(
-            expenses.addExpense(ExpenseWebMapper.toApplication(req))
-    );
+  public ResponseEntity<ExpenseResponse> create(@RequestBody ExpenseCreateRequest req) {
+    var dto = ExpenseWebMapper.toApplication(req);
+    var created = service.addExpense(dto);
+    return ResponseEntity.ok(ExpenseWebMapper.toWeb(created));
+  }
+
+  @GetMapping("/group/{groupId}")
+  public List<ExpenseResponse> listByGroup(@PathVariable Long groupId) {
+    return service.getExpensesByGroup(groupId)
+            .stream()
+            .map(ExpenseWebMapper::toWeb)
+            .toList();
   }
 }
