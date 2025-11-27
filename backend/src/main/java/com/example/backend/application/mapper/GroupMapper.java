@@ -5,6 +5,8 @@ import com.example.backend.application.dto.group.GroupResponseDto;
 import com.example.backend.domain.model.group.Group;
 import com.example.backend.domain.model.user.User;
 
+import java.time.LocalDateTime;
+
 public class GroupMapper {
   private GroupMapper() {}
 
@@ -12,6 +14,7 @@ public class GroupMapper {
     return Group.builder()
             .name(dto.name())
             .createdBy(creator)
+            .createdAt(LocalDateTime.now())
             .build();
   }
 

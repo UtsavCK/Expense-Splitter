@@ -36,4 +36,12 @@ public class GroupRepositoryAdapter implements GroupRepository {
             .map(GroupEntityMapper::toDomain)
             .toList();
   }
+
+  @Override
+  public List<Group> findAll() {
+    return jpaRepo.findAll()
+            .stream()
+            .map(GroupEntityMapper::toDomain)
+            .toList();
+  }
 }

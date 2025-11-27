@@ -7,10 +7,10 @@ import com.example.backend.web.dto.group.GroupResponse;
 
 public class GroupWebMapper {
 
-  public static GroupRequestDto toApplication(GroupCreateRequest req) {
+  public static GroupRequestDto toApplication(GroupCreateRequest req, Long creatorId) {
     return new GroupRequestDto(
             req.name(),
-            req.createdByUserId()
+            creatorId
     );
   }
 

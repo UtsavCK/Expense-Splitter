@@ -8,4 +8,5 @@ public interface GroupRepository {
   Group save(Group group);
   Optional<Group> findById(Long id);
   List<Group> findByCreatedBy(Long userId);
+  List<Group> findAll();
 }

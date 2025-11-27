@@ -9,6 +9,8 @@ import com.example.backend.domain.repository.GroupRepository;
 import com.example.backend.domain.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class GroupApplicationService implements GroupUseCase {
 
@@ -26,9 +28,15 @@ public class GroupApplicationService implements GroupUseCase {
             .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
 
     Group domaingroup = GroupMapper.toDomain(dto, creator);
-
     var saved = groupRepository.save(domaingroup);
-
     return GroupMapper.toDto(saved);
+  }
+
+  @Override
+  public List<GroupResponseDto> getAllGroups() {
+    return groupRepository.findAll()
+            .stream()
+            .map(GroupMapper::toDto)
+            .toList();
   }
 }
