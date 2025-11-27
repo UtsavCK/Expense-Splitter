@@ -8,4 +8,5 @@ public interface GroupMemberRepository {
   GroupMember save(GroupMember groupMember);
   List<GroupMember> findByGroupId(Long groupId);
   boolean existsByGroupIdAndUserId(Long groupId, Long userId);
+  void delete(GroupMember toRemove);
 }

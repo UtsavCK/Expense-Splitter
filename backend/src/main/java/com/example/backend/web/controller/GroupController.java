@@ -29,10 +29,18 @@ public class GroupController {
   }
 
   @GetMapping
-  public List<GroupResponse> getAllUsers() {
+  public List<GroupResponse> getAllGroups() {
     return groupService.getAllGroups()
             .stream()
             .map(GroupWebMapper::toWeb)
             .toList();
+  }
+
+  @GetMapping("/{id}")
+  public ResponseEntity<GroupResponse> getGroup(@PathVariable Long id) {
+    return groupService.getGroupById(id)
+            .map(GroupWebMapper::toWeb)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
   }
 }
