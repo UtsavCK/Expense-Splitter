@@ -1,24 +1,38 @@
 package com.example.backend.web.controller;
 
+import com.example.backend.application.dto.payment.PaymentResponseDto;
 import com.example.backend.application.usecase.PaymentUseCase;
-import com.example.backend.web.dto.payment.*;
+import com.example.backend.web.dto.payment.PaymentCreateRequest;
 import com.example.backend.web.mapper.PaymentWebMapper;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/payments")
+@RequestMapping("/api/payments")
 public class PaymentController {
 
-  private final PaymentUseCase payments;
+  private final PaymentUseCase paymentService;
 
-  public PaymentController(PaymentUseCase payments) {
-    this.payments = payments;
+  public PaymentController(PaymentUseCase paymentUseCase) {
+    this.paymentService = paymentUseCase;
   }
 
+//  @PostMapping
+//  public PaymentResponse createPayment(@RequestBody PaymentCreateRequest req) {
+//    return PaymentWebMapper.toWeb(
+//            paymentService.recordPayment()
+//    );
+//  }
+
   @PostMapping
-  public PaymentResponse create(@RequestBody PaymentCreateRequest req) {
-    return PaymentWebMapper.toWeb(
-            payments.recordPayment(PaymentWebMapper.toApplication(req))
-    );
+  public ResponseEntity<PaymentResponseDto> createPayment(@RequestBody PaymentCreateRequest req) {
+    return ResponseEntity.ok(paymentService.recordPayment(PaymentWebMapper.toApplication(req)));
+  }
+
+  @GetMapping("/user/{userId}")
+  public ResponseEntity<List<PaymentResponseDto>> getUserPayments(@PathVariable Long userId) {
+    return ResponseEntity.ok(paymentService.getPaymentsByUser(userId));
   }
 }

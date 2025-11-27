@@ -10,6 +10,8 @@ import com.example.backend.domain.repository.PaymentRepository;
 import com.example.backend.domain.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class PaymentApplicationService implements PaymentUseCase {
 
@@ -30,5 +32,12 @@ public class PaymentApplicationService implements PaymentUseCase {
     Payment domainPayment = PaymentMapper.toDomain(dto, paidBy, paidTo);
     var saved = paymentRepository.save(domainPayment);
     return PaymentMapper.toDto(saved);
+  }
+
+  @Override
+  public List<PaymentResponseDto> getPaymentsByUser(Long userId) {
+    return paymentRepository.findByPaidBy(userId).stream()
+            .map(PaymentMapper::toDto)
+            .toList();
   }
 }
