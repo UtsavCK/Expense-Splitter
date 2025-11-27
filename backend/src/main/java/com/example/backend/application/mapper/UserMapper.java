@@ -3,6 +3,7 @@ package com.example.backend.application.mapper;
 import com.example.backend.application.dto.user.UserRequestDto;
 import com.example.backend.application.dto.user.UserResponseDto;
 import com.example.backend.domain.model.user.User;
+import com.example.backend.web.dto.user.UserUpdateRequest;
 
 public final class UserMapper {
   private UserMapper() {}
@@ -22,5 +23,11 @@ public final class UserMapper {
             user.getEmail(),
             user.getCreatedAt()
     );
+  }
+
+  public static void updateDomain(User user, UserUpdateRequest dto) {
+    if (dto.name() != null) user.setName(dto.name());
+    if (dto.email() != null) user.setEmail(dto.email());
+    if (dto.password() != null) user.setPasswordHash(dto.password());
   }
 }

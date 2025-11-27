@@ -1,7 +1,5 @@
 package com.example.backend.web.controller;
 
-import com.example.backend.application.dto.auth.LoginRequestDto;
-import com.example.backend.application.dto.auth.LoginResponseDto;
 import com.example.backend.application.dto.user.UserRequestDto;
 import com.example.backend.application.dto.user.UserResponseDto;
 import com.example.backend.application.service.AuthApplicationService;
@@ -19,12 +17,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
   private final AuthApplicationService authService;
-
-//  @PostMapping("/login")
-//  public LoginResponseDto login(@RequestBody LoginRequest req) {
-//    LoginRequestDto dto = AuthWebMapper.toApplication(req);
-//    return authService.login(dto); // returns LoginResponseDto
-//  }
 
   @PostMapping("/register")
   public RegisterResponse register(@RequestBody RegisterRequest request) {

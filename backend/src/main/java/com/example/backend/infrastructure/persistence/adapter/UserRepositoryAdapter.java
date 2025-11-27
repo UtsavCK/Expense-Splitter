@@ -50,4 +50,9 @@ public class UserRepositoryAdapter implements UserRepository {
   public void deleteById(Long id) {
 
   }
+
+  @Override
+  public boolean existsById(Long id) {
+    return jpaRepo.existsById(id);
+  }
 }
