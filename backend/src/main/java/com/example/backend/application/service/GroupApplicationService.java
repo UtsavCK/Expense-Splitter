@@ -28,36 +28,34 @@ public class GroupApplicationService implements GroupUseCase {
 
   @Override
   public GroupResponseDto createGroup(GroupRequestDto dto) {
-    // Validate creator exists
     User creator = userRepository.findById(dto.createdByUserId())
-            .orElseThrow(() -> new IllegalArgumentException("Creator user not found."));
+            .orElseThrow(() -> new IllegalArgumentException("Creator not found."));
 
-    // Create group
     Group domainGroup = GroupMapper.toDomain(dto, creator);
     Group saved = groupRepository.save(domainGroup);
 
     // Automatically add creator as first member
-    GroupMember creatorMembership = GroupMember.builder()
+    GroupMember gm = GroupMember.builder()
             .group(saved)
             .user(creator)
             .build();
-    groupMemberRepository.save(creatorMembership);
+    groupMemberRepository.save(gm);
 
     return GroupMapper.toDto(saved);
   }
 
   @Override
   @Transactional(readOnly = true)
-  public List<GroupResponseDto> getAllGroups() {
-    return groupRepository.findAll().stream()
-            .map(GroupMapper::toDto)
+  public List<GroupResponseDto> getUserGroups(Long userId) {
+    List<GroupMember> memberships = groupMemberRepository.findByUserId(userId);
+    return memberships.stream()
+            .map(gm -> GroupMapper.toDto(gm.getGroup()))
             .toList();
   }
 
   @Override
   @Transactional(readOnly = true)
   public Optional<GroupResponseDto> getGroupById(Long id) {
-    return groupRepository.findById(id)
-            .map(GroupMapper::toDto);
+    return groupRepository.findById(id).map(GroupMapper::toDto);
   }
 }

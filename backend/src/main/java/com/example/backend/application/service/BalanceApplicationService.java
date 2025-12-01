@@ -60,7 +60,9 @@ public class BalanceApplicationService implements BalanceUseCase {
             .toList();
 
     // Calculate balances
-    List<Balance> balances = balanceDomainService.calculateBalances(expenses, allParticipants, payments);
+    List<Balance> balances = balanceDomainService.calculateBalances(
+            expenses, allParticipants, payments
+    );
 
     // Filter balances to only include group members
     List<Balance> groupBalances = balances.stream()
@@ -69,56 +71,45 @@ public class BalanceApplicationService implements BalanceUseCase {
 
     // Convert to DTOs with user names
     List<BalanceDto> balanceDtos = groupBalances.stream()
-            .map(balance -> {
-              User fromUser = userRepository.findById(balance.getFromUserId())
-                      .orElseThrow(() -> new IllegalStateException("User not found"));
-              User toUser = userRepository.findById(balance.getToUserId())
-                      .orElseThrow(() -> new IllegalStateException("User not found"));
-
-              return new BalanceDto(
-                      balance.getFromUserId(),
-                      fromUser.getName(),
-                      balance.getToUserId(),
-                      toUser.getName(),
-                      balance.getAmount()
-              );
-            })
+            .map(this::toBalanceDto)
             .toList();
 
     return new GroupBalanceSummaryDto(groupId, group.getName(), balanceDtos);
   }
 
   @Override
-  public List<BalanceDto> getBalanceBetweenUsers(Long userId1, Long userId2) {
+  public List<BalanceDto> getBalanceBetweenUsers(Long currentUserId, Long otherUserId) {
     // Validate users exist
-    userRepository.findById(userId1)
-            .orElseThrow(() -> new IllegalArgumentException("User1 not found"));
-    userRepository.findById(userId2)
-            .orElseThrow(() -> new IllegalArgumentException("User2 not found"));
+    userRepository.findById(currentUserId)
+            .orElseThrow(() -> new IllegalArgumentException("Current user not found"));
+    userRepository.findById(otherUserId)
+            .orElseThrow(() -> new IllegalArgumentException("Other user not found"));
 
-    // Get all expenses where either user is the payer
+    // Get all expenses involving either user
     List<Expense> expenses = new ArrayList<>();
-    // This would need a custom repository method, simplified here
+    // Note: This would need custom repository methods in production
 
     // Get participants
     List<ExpenseParticipant> participants = new ArrayList<>();
 
-    // Get payments between these users
+    // Get payments between these two users only
     List<Payment> payments = new ArrayList<>();
-    payments.addAll(paymentRepository.findByPaidBy(userId1).stream()
-            .filter(p -> p.getPaidTo().getUserId().equals(userId2))
+    payments.addAll(paymentRepository.findByPaidBy(currentUserId).stream()
+            .filter(p -> p.getPaidTo().getUserId().equals(otherUserId))
             .toList());
-    payments.addAll(paymentRepository.findByPaidBy(userId2).stream()
-            .filter(p -> p.getPaidTo().getUserId().equals(userId1))
+    payments.addAll(paymentRepository.findByPaidBy(otherUserId).stream()
+            .filter(p -> p.getPaidTo().getUserId().equals(currentUserId))
             .toList());
 
     // Calculate and return balances
-    List<Balance> balances = balanceDomainService.calculateBalances(expenses, participants, payments);
+    List<Balance> balances = balanceDomainService.calculateBalances(
+            expenses, participants, payments
+    );
 
     return balances.stream()
             .filter(b ->
-                    (b.getFromUserId().equals(userId1) && b.getToUserId().equals(userId2)) ||
-                            (b.getFromUserId().equals(userId2) && b.getToUserId().equals(userId1))
+                    (b.getFromUserId().equals(currentUserId) && b.getToUserId().equals(otherUserId)) ||
+                            (b.getFromUserId().equals(otherUserId) && b.getToUserId().equals(currentUserId))
             )
             .map(this::toBalanceDto)
             .toList();
@@ -127,17 +118,19 @@ public class BalanceApplicationService implements BalanceUseCase {
   @Override
   public List<BalanceDto> getUserBalances(Long userId) {
     // Validate user exists
-    User user = userRepository.findById(userId)
+    userRepository.findById(userId)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
     // Get all groups the user is a member of
-    List<GroupMember> memberships = groupMemberRepository.findByGroupId(userId);
+    List<GroupMember> memberships = groupMemberRepository.findByUserId(userId);
 
     List<BalanceDto> allBalances = new ArrayList<>();
 
     // Calculate balances for each group
     for (GroupMember membership : memberships) {
-      GroupBalanceSummaryDto groupSummary = calculateGroupBalances(membership.getGroup().getGroupId());
+      GroupBalanceSummaryDto groupSummary = calculateGroupBalances(
+              membership.getGroup().getGroupId()
+      );
 
       // Filter to only balances involving this user
       List<BalanceDto> userGroupBalances = groupSummary.balances().stream()

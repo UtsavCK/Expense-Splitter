@@ -8,36 +8,55 @@ import com.example.backend.domain.model.payment.Payment;
 import com.example.backend.domain.model.user.User;
 import com.example.backend.domain.repository.PaymentRepository;
 import com.example.backend.domain.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class PaymentApplicationService implements PaymentUseCase {
 
   private final PaymentRepository paymentRepository;
   private final UserRepository userRepository;
 
-  public PaymentApplicationService (PaymentRepository paymentRepository, UserRepository userRepository) {
-    this.paymentRepository = paymentRepository;
-    this.userRepository = userRepository;
-  }
-
   @Override
   public PaymentResponseDto recordPayment(PaymentRequestDto dto) {
     User paidBy = userRepository.findById(dto.paidBy())
-            .orElseThrow(() -> new IllegalArgumentException("paidBy not found!"));
+            .orElseThrow(() -> new IllegalArgumentException("paidBy user not found!"));
     User paidTo = userRepository.findById(dto.paidTo())
-            .orElseThrow(() -> new IllegalArgumentException("paidTo not found!"));
+            .orElseThrow(() -> new IllegalArgumentException("paidTo user not found!"));
+
     Payment domainPayment = PaymentMapper.toDomain(dto, paidBy, paidTo);
-    var saved = paymentRepository.save(domainPayment);
+    Payment saved = paymentRepository.save(domainPayment);
     return PaymentMapper.toDto(saved);
   }
 
   @Override
+  @Transactional(readOnly = true)
   public List<PaymentResponseDto> getPaymentsByUser(Long userId) {
     return paymentRepository.findByPaidBy(userId).stream()
             .map(PaymentMapper::toDto)
             .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<PaymentResponseDto> getPaymentsToUser(Long userId) {
+    return paymentRepository.findByPaidTo(userId).stream()
+            .map(PaymentMapper::toDto)
+            .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<PaymentResponseDto> getAllUserPayments(Long userId) {
+    List<PaymentResponseDto> allPayments = new ArrayList<>();
+    allPayments.addAll(getPaymentsByUser(userId));
+    allPayments.addAll(getPaymentsToUser(userId));
+    return allPayments;
   }
 }

@@ -8,4 +8,6 @@ import java.util.List;
 public interface PaymentUseCase {
   PaymentResponseDto recordPayment(PaymentRequestDto dto);
   List<PaymentResponseDto> getPaymentsByUser(Long userId);
+  List<PaymentResponseDto> getPaymentsToUser(Long userId);
+  List<PaymentResponseDto> getAllUserPayments(Long userId);
 }

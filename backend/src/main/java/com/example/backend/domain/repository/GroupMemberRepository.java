@@ -7,6 +7,7 @@ import java.util.List;
 public interface GroupMemberRepository {
   GroupMember save(GroupMember groupMember);
   List<GroupMember> findByGroupId(Long groupId);
+  List<GroupMember> findByUserId(Long userId);
   boolean existsByGroupIdAndUserId(Long groupId, Long userId);
   void delete(GroupMember toRemove);
 }

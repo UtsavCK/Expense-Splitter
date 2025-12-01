@@ -1,9 +1,9 @@
 package com.example.backend.web.controller;
 
-import com.example.backend.application.dto.user.UserUpdateDto;
 import com.example.backend.application.usecase.UserUseCase;
 import com.example.backend.web.dto.user.*;
 import com.example.backend.web.mapper.UserWebMapper;
+import com.example.backend.web.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,42 +17,26 @@ public class UserController {
 
   private final UserUseCase userService;
 
-  @PostMapping
-  public ResponseEntity<UserResponse> create(@RequestBody UserCreateRequest request) {
-    var appDto = UserWebMapper.toCreateApp(request);
-    var result = userService.createUser(appDto);
-    return ResponseEntity.ok(UserWebMapper.toWeb(result));
-  }
-
-  @GetMapping
-  public List<UserResponse> getAllUsers() {
-    return userService.getAllUsers()
-            .stream()
-            .map(UserWebMapper::toWeb)
-            .toList();
-  }
-
-  @GetMapping("/{id}")
-  public ResponseEntity<UserResponse> getUserById(@PathVariable Long id) {
-    return userService.getUserById(id)
+  @GetMapping("/me")
+  public ResponseEntity<UserResponse> getMyProfile(@CurrentUser Long userId) {
+    return userService.getUserById(userId)
             .map(UserWebMapper::toWeb)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.notFound().build());
   }
 
-  @PutMapping("/{id}")
-  public ResponseEntity<UserResponse> updateUser(
-          @PathVariable Long id,
+  @PutMapping("/me")
+  public ResponseEntity<UserResponse> updateMyProfile(
+          @CurrentUser Long userId,
           @RequestBody UserUpdateRequest request
   ) {
-    var updated = userService.updateUser(id, request);
-
+    var updated = userService.updateUser(userId, request);
     return ResponseEntity.ok(UserWebMapper.toWeb(updated));
   }
 
-  @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-    userService.deleteUser(id);
+  @DeleteMapping("/me")
+  public ResponseEntity<Void> deleteMyAccount(@CurrentUser Long userId) {
+    userService.deleteUser(userId);
     return ResponseEntity.noContent().build();
   }
 }

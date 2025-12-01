@@ -32,6 +32,13 @@ public class GroupMemberRepositoryAdapter implements GroupMemberRepository {
   }
 
   @Override
+  public List<GroupMember> findByUserId(Long userId) {
+    return jpaRepo.findByUser_UserId(userId).stream()
+            .map(GroupMemberEntityMapper::toDomain)
+            .toList();
+  }
+
+  @Override
   public boolean existsByGroupIdAndUserId(Long groupId, Long userId) {
     return jpaRepo.existsByGroup_GroupIdAndUser_UserId(groupId, userId);
   }

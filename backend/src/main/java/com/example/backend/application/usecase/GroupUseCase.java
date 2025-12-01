@@ -8,6 +8,6 @@ import java.util.Optional;
 
 public interface GroupUseCase {
   GroupResponseDto createGroup(GroupRequestDto dto);
-  List<GroupResponseDto> getAllGroups();
+  List<GroupResponseDto> getUserGroups(Long userId);
   Optional<GroupResponseDto> getGroupById(Long id);
 }
