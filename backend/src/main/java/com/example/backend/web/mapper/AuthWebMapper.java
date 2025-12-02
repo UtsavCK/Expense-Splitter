@@ -2,7 +2,7 @@ package com.example.backend.web.mapper;
 
 
 import com.example.backend.application.dto.auth.LoginRequestDto;
-import com.example.backend.application.dto.auth.LoginResponseDto;
+import com.example.backend.application.dto.auth.AuthResponseDto;
 import com.example.backend.application.dto.user.UserRequestDto;
 import com.example.backend.application.dto.user.UserResponseDto;
 import com.example.backend.web.dto.auth.LoginRequest;
@@ -24,7 +24,7 @@ public class AuthWebMapper {
     return new LoginRequestDto(req.email(), req.password());
   }
 
-  public static LoginResponse toWeb(LoginResponseDto dto) {
+  public static LoginResponse toWeb(AuthResponseDto dto) {
     return new LoginResponse(dto.token(), dto.userId(), dto.email(), dto.name());
   }
 }

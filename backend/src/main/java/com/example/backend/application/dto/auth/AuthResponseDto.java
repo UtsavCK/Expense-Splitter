@@ -1,6 +1,6 @@
 package com.example.backend.application.dto.auth;
 
-public record LoginResponseDto(
+public record AuthResponseDto(
         String token,
         Long userId,
         String email,

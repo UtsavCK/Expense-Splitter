@@ -1,49 +1,55 @@
 package com.example.backend.infrastructure.security;
 
-import com.example.backend.infrastructure.jwt.JwtProvider;
-import io.jsonwebtoken.Claims;
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
 import java.util.Collections;
 
 @Component
-public class JwtAuthenticationFilter extends GenericFilter {
+@RequiredArgsConstructor
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-  private final JwtProvider jwtProvider;
-
-  public JwtAuthenticationFilter(JwtProvider jwtProvider) {
-    this.jwtProvider = jwtProvider;
-  }
+  private final JwtService jwtService;
 
   @Override
-  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-          throws IOException, ServletException {
+  protected void doFilterInternal(
+          HttpServletRequest request,
+          HttpServletResponse response,
+          FilterChain filterChain
+  ) throws ServletException, IOException {
 
-    HttpServletRequest req = (HttpServletRequest) request;
-    String header = req.getHeader("Authorization");
+    String token = extractToken(request);
 
-    if (header != null && header.startsWith("Bearer ")) {
-      try {
-        String token = header.substring(7);
-        Claims claims = jwtProvider.validate(token);
+    if (token != null && jwtService.validateToken(token)) {
+      Long userId = jwtService.getUserIdFromToken(token);
 
-        Long userId = claims.get("userId", Long.class);
-        String email = claims.getSubject();
+      // Create authentication object
+      UsernamePasswordAuthenticationToken authentication =
+              new UsernamePasswordAuthenticationToken(
+                      userId,
+                      null,
+                      Collections.emptyList()
+              );
 
-        var auth = new UsernamePasswordAuthenticationToken(
-                email, null, Collections.emptyList());
-
-        auth.setDetails(userId);
-
-        SecurityContextHolder.getContext().setAuthentication(auth);
-
-      } catch (Exception ignored) {}
+      SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
-    chain.doFilter(request, response);
+    filterChain.doFilter(request, response);
+  }
+
+  private String extractToken(HttpServletRequest request) {
+    String bearerToken = request.getHeader("Authorization");
+    if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+      return bearerToken.substring(7);
+    }
+    return null;
   }
 }

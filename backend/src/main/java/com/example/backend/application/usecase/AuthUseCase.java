@@ -1,8 +1,10 @@
 package com.example.backend.application.usecase;
 
+import com.example.backend.application.dto.auth.AuthResponseDto;
 import com.example.backend.application.dto.auth.LoginRequestDto;
-import com.example.backend.application.dto.auth.LoginResponseDto;
+import com.example.backend.application.dto.auth.RegisterRequestDto;
 
 public interface AuthUseCase {
-  LoginResponseDto login(LoginRequestDto dto);
+  AuthResponseDto login(LoginRequestDto request);
+  AuthResponseDto register(RegisterRequestDto request);
 }
