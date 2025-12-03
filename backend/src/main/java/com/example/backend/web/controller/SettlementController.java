@@ -19,9 +19,6 @@ public class SettlementController {
   private final SettlementUseCase settlementUseCase;
   private final AuthorizationDomainService authService;
 
-  /**
-   * Get settlement plan - only group members can see
-   */
   @GetMapping("/group/{groupId}/plan")
   public ResponseEntity<GroupSettlementPlanDto> getSettlementPlan(
           @PathVariable Long groupId,
@@ -32,18 +29,12 @@ public class SettlementController {
     return ResponseEntity.ok(plan);
   }
 
-  /**
-   * Get own settlement suggestions
-   */
   @GetMapping("/my-suggestions")
   public ResponseEntity<List<SettlementSuggestionDto>> getMySuggestions(@CurrentUser Long userId) {
     List<SettlementSuggestionDto> suggestions = settlementUseCase.getUserSettlementSuggestions(userId);
     return ResponseEntity.ok(suggestions);
   }
 
-  /**
-   * Execute settlement - only group members can execute
-   */
   @PostMapping("/group/{groupId}/execute")
   public ResponseEntity<Void> executeSettlement(
           @PathVariable Long groupId,

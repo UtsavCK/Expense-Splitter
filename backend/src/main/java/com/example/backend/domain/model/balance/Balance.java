@@ -11,5 +11,6 @@ import java.math.BigDecimal;
 public class Balance {
   private Long fromUserId;
   private Long toUserId;
+  private Long groupId;
   private BigDecimal amount; // positive means fromUser owes toUser
 }

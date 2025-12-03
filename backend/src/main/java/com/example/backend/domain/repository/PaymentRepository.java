@@ -10,4 +10,5 @@ public interface PaymentRepository {
   Optional<Payment> findById(Long id);
   List<Payment> findByPaidBy(Long userId);
   List<Payment> findByPaidTo(Long userId);
+  List<Payment> findByGroup(Long groupId);
 }

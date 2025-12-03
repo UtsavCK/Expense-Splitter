@@ -8,6 +8,8 @@ public record SettlementSuggestionDto(
         String fromUserName,
         Long toUserId,
         String toUserName,
+        Long groupId,
+        String groupName,
         BigDecimal amount,
         String description
 ) {}

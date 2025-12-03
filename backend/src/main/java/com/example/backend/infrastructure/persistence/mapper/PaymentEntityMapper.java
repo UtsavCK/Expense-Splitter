@@ -19,6 +19,11 @@ public class PaymentEntityMapper {
                             ? UserEntityMapper.toEntity(p.getPaidTo())
                             : null
             )
+            .group(
+                    p.getGroup() != null
+                            ? GroupEntityMapper.toEntity(p.getGroup())
+                            : null
+            )
             .amount(p.getAmount())
             .paymentDate(p.getPaymentDate())
             .notes(p.getNotes())
@@ -36,6 +41,11 @@ public class PaymentEntityMapper {
             .paidTo(
                     pe.getPaidTo() != null
                             ? UserEntityMapper.toDomain(pe.getPaidTo())
+                            : null
+            )
+            .group(
+                    pe.getGroup() != null
+                            ? GroupEntityMapper.toDomain(pe.getGroup())
                             : null
             )
             .amount(pe.getAmount())

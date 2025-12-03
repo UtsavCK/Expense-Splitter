@@ -9,6 +9,7 @@ import com.example.backend.application.usecase.BalanceUseCase;
 import com.example.backend.application.usecase.PaymentUseCase;
 import com.example.backend.application.usecase.SettlementUseCase;
 import com.example.backend.domain.model.balance.Balance;
+import com.example.backend.domain.model.group.Group;
 import com.example.backend.domain.model.user.User;
 import com.example.backend.domain.repository.GroupRepository;
 import com.example.backend.domain.repository.UserRepository;
@@ -69,6 +70,8 @@ public class SettlementApplicationService implements SettlementUseCase {
                       .orElseThrow(() -> new IllegalStateException("User not found"));
               User toUser = userRepository.findById(balance.getToUserId())
                       .orElseThrow(() -> new IllegalStateException("User not found"));
+              Group group = groupRepository.findById(balance.getGroupId())
+                      .orElseThrow(() -> new IllegalStateException("Group not found"));
 
               String description = String.format(
                       "%s should pay %s to settle expenses",
@@ -81,6 +84,8 @@ public class SettlementApplicationService implements SettlementUseCase {
                       fromUser.getName(),
                       balance.getToUserId(),
                       toUser.getName(),
+                      group.getGroupId(),
+                      group.getName(),
                       balance.getAmount(),
                       description
               );
@@ -139,6 +144,7 @@ public class SettlementApplicationService implements SettlementUseCase {
               String[] ids = entry.getKey().split("-");
               Long fromId = Long.parseLong(ids[0]);
               Long toId = Long.parseLong(ids[1]);
+              Long groupId = Long.parseLong(ids[2]);
               BigDecimal amount = entry.getValue();
 
               // Flip if negative
@@ -153,12 +159,16 @@ public class SettlementApplicationService implements SettlementUseCase {
                       .orElseThrow(() -> new IllegalStateException("User not found"));
               User toUser = userRepository.findById(toId)
                       .orElseThrow(() -> new IllegalStateException("User not found"));
+              Group group = groupRepository.findById(groupId)
+                      .orElseThrow(() -> new IllegalStateException("Group not found"));
 
               return new SettlementSuggestionDto(
                       fromId,
                       fromUser.getName(),
                       toId,
                       toUser.getName(),
+                      groupId,
+                      group.getName(),
                       amount,
                       "Suggested settlement payment"
               );
@@ -182,6 +192,7 @@ public class SettlementApplicationService implements SettlementUseCase {
       PaymentRequestDto paymentRequest = new PaymentRequestDto(
               suggestion.fromUserId(),
               suggestion.toUserId(),
+              suggestion.groupId(),
               suggestion.amount(),
               today,
               "Settlement payment - " + suggestion.description()

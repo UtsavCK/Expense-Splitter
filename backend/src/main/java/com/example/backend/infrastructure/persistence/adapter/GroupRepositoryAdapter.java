@@ -1,6 +1,7 @@
 package com.example.backend.infrastructure.persistence.adapter;
 
 import com.example.backend.domain.model.group.Group;
+import com.example.backend.domain.model.user.User;
 import com.example.backend.domain.repository.GroupRepository;
 import com.example.backend.infrastructure.persistence.entity.GroupEntity;
 import com.example.backend.infrastructure.persistence.mapper.GroupEntityMapper;
@@ -44,4 +45,10 @@ public class GroupRepositoryAdapter implements GroupRepository {
             .map(GroupEntityMapper::toDomain)
             .toList();
   }
+
+//  @Override
+//  public Boolean hasMember(User user) {
+////    return jpaRepo.findBy()
+//
+//  }
 }

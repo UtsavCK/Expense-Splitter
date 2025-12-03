@@ -44,4 +44,12 @@ public class PaymentRepositoryAdapter implements PaymentRepository {
             .map(PaymentEntityMapper::toDomain)
             .toList();
   }
+
+  @Override
+  public List<Payment> findByGroup(Long groupId) {
+    return jpaRepo.findByGroup_GroupId(groupId)
+            .stream()
+            .map(PaymentEntityMapper::toDomain)
+            .toList();
+  }
 }

@@ -40,7 +40,6 @@ public class BalanceController {
           @PathVariable Long otherUserId,
           @CurrentUser Long userId
   ) {
-    // Users can only see balances involving themselves
     List<BalanceDto> balances = balanceUseCase.getBalanceBetweenUsers(userId, otherUserId);
     return ResponseEntity.ok(balances);
   }
