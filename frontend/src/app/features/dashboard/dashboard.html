@@ -1,0 +1,278 @@
+<div class="dashboard">
+  <nav class="navbar">
+    <div class="navbar-left">
+      <h2 class="logo">💰 SplitWise</h2>
+    </div>
+    <div class="navbar-right">
+      <button class="btn-icon" (click)="goToProfile()" title="Profile">
+        <span class="icon">👤</span>
+      </button>
+      <span class="user-name">{{ user?.name }}</span>
+      <button class="btn-icon" (click)="logout()" title="Logout">
+        <span class="icon">🚪</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Summary Cards with Real Stats -->
+  <div class="summary-section" *ngIf="activeTab === 'overview' && stats">
+    <div class="summary-card positive">
+      <div class="summary-icon">📥</div>
+      <div class="summary-content">
+        <div class="summary-label">You are owed</div>
+        <div class="summary-amount">${{ stats.totalOwed.toFixed(2) }}</div>
+      </div>
+    </div>
+    <div class="summary-card negative">
+      <div class="summary-icon">📤</div>
+      <div class="summary-content">
+        <div class="summary-label">You paid</div>
+        <div class="summary-amount">${{ stats.totalPaid.toFixed(2) }}</div>
+      </div>
+    </div>
+    <div class="summary-card" [ngClass]="stats.netBalance >= 0 ? 'positive' : 'negative'">
+      <div class="summary-icon">💵</div>
+      <div class="summary-content">
+        <div class="summary-label">Net Balance</div>
+        <div class="summary-amount">${{ stats.netBalance.toFixed(2) }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row" *ngIf="stats">
+    <div class="stat-item">
+      <span class="stat-value">{{ stats.totalGroups }}</span>
+      <span class="stat-label">Groups</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">{{ stats.totalExpenses }}</span>
+      <span class="stat-label">Expenses</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">{{ stats.totalPaymentsMade }}</span>
+      <span class="stat-label">Payments Made</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-value">{{ stats.totalPaymentsReceived }}</span>
+      <span class="stat-label">Payments Received</span>
+    </div>
+  </div>
+
+  <div class="action-buttons">
+    <button class="btn-action primary" (click)="openCreateGroupModal()">
+      <span class="icon">➕</span>
+      Create Group
+    </button>
+    <!-- <button class="btn-action secondary" (click)="openQuickPaymentModal()">
+      <span class="icon">💳</span>
+      Quick Payment
+    </button> -->
+  </div>
+
+  <div class="tabs">
+    <button class="tab" [class.active]="activeTab === 'overview'" (click)="setActiveTab('overview')">
+      <span class="icon">📊</span> Overview
+    </button>
+    <button class="tab" [class.active]="activeTab === 'groups'" (click)="setActiveTab('groups')">
+      <span class="icon">👥</span> Groups ({{ groups.length }})
+    </button>
+    <button class="tab" [class.active]="activeTab === 'balances'" (click)="setActiveTab('balances')">
+      <span class="icon">⚖️</span> Balances ({{ balances.length }})
+    </button>
+    <button class="tab" [class.active]="activeTab === 'payments'" (click)="setActiveTab('payments')">
+      <span class="icon">💸</span> Payments ({{ payments.length }})
+    </button>
+  </div>
+
+  <div class="content" *ngIf="!loading">
+    <!-- Overview Tab -->
+    <div *ngIf="activeTab === 'overview'" class="overview-grid">
+      <div class="overview-section">
+        <h3>Recent Balances</h3>
+        <div class="list">
+          <div *ngFor="let balance of balances.slice(0, 5)" class="list-item">
+            <span class="icon">{{ getBalanceColor(balance) === 'positive' ? '📥' : '📤' }}</span>
+            <div class="list-content">
+              <div class="list-title">{{ getBalanceText(balance) }}</div>
+            </div>
+            <div class="list-amount" [ngClass]="getBalanceColor(balance)">
+              ${{ balance.amount.toFixed(2) }}
+            </div>
+          </div>
+          <div *ngIf="balances.length === 0" class="empty-state-small">
+            <span class="icon">🎉</span>
+            <p>All settled up!</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="overview-section">
+        <h3>Recent Payments</h3>
+        <div class="list">
+          <div *ngFor="let payment of payments.slice(0, 5)" class="list-item">
+            <span class="icon">💰</span>
+            <div class="list-content">
+              <div class="list-title">{{ payment.paidByName }} → {{ payment.paidToName }}</div>
+              <div class="list-subtitle">{{ payment.notes || 'Payment' }}</div>
+            </div>
+            <div class="list-amount positive">
+              ${{ payment.amount.toFixed(2) }}
+            </div>
+          </div>
+          <div *ngIf="payments.length === 0" class="empty-state-small">
+            <span class="icon">📝</span>
+            <p>No payments yet</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Groups Tab -->
+    <div *ngIf="activeTab === 'groups'" class="grid">
+      <div *ngFor="let group of groups" class="card clickable" (click)="viewGroup(group.groupId)">
+        <div class="card-icon">👥</div>
+        <div class="card-content">
+          <h3>{{ group.name }}</h3>
+          <p class="text-muted">Created {{ group.createdAt | date:'mediumDate' }}</p>
+          <span class="badge">Active</span>
+        </div>
+      </div>
+      <div *ngIf="groups.length === 0" class="empty-state">
+        <span class="icon xlarge">📁</span>
+        <h3>No groups yet</h3>
+        <p>Create your first group to start splitting expenses</p>
+        <button class="btn-primary" (click)="openCreateGroupModal()">
+          <span class="icon">➕</span> Create Group
+        </button>
+      </div>
+    </div>
+
+    <!-- Balances Tab -->
+    <div *ngIf="activeTab === 'balances'" class="list">
+      <div *ngFor="let balance of balances" class="list-item">
+        <span class="icon">{{ getBalanceColor(balance) === 'positive' ? '📥' : '📤' }}</span>
+        <div class="list-content">
+          <div class="list-title">{{ getBalanceText(balance) }}</div>
+          <div class="list-subtitle">
+            {{ balance.fromUserName }} → {{ balance.toUserName }}
+          </div>
+        </div>
+        <div class="list-amount" [ngClass]="getBalanceColor(balance)">
+          ${{ balance.amount.toFixed(2) }}
+        </div>
+      </div>
+      <div *ngIf="balances.length === 0" class="empty-state">
+        <span class="icon xlarge">✨</span>
+        <h3>All settled up!</h3>
+        <p>You don't owe anyone and no one owes you</p>
+      </div>
+    </div>
+
+    <!-- Payments Tab -->
+    <div *ngIf="activeTab === 'payments'" class="list">
+      <div *ngFor="let payment of payments" class="list-item">
+        <span class="icon">💰</span>
+        <div class="list-content">
+          <div class="list-title">{{ payment.paidByName }} paid {{ payment.paidToName }}</div>
+          <div class="list-subtitle">
+            {{ payment.paymentDate | date:'mediumDate' }} • {{ payment.notes }}
+          </div>
+        </div>
+        <div class="list-amount positive">
+          ${{ payment.amount.toFixed(2) }}
+        </div>
+      </div>
+      <div *ngIf="payments.length === 0" class="empty-state">
+        <span class="icon xlarge">📝</span>
+        <h3>No payments yet</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading your data...</p>
+  </div>
+
+  <!-- Create Group Modal -->
+  <div class="modal-overlay" *ngIf="showCreateGroupModal" (click)="closeCreateGroupModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Create New Group</h2>
+        <button class="btn-close" (click)="closeCreateGroupModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Group Name</label>
+          <input 
+            type="text" 
+            [(ngModel)]="newGroupName" 
+            placeholder="e.g., Weekend Trip, Roommates"
+            (keyup.enter)="createGroup()"
+            autofocus
+          />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeCreateGroupModal()">Cancel</button>
+        <button class="btn-primary" (click)="createGroup()" [disabled]="!newGroupName.trim()">
+          Create
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Payment Modal - WITH EMAIL SEARCH -->
+  <!--   
+  <div class="modal-overlay" *ngIf="showQuickPaymentModal" (click)="closeQuickPaymentModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Quick Payment</h2>
+        <button class="btn-close" (click)="closeQuickPaymentModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="toggle-group">
+          <button 
+            class="toggle-btn" 
+            [class.active]="useEmailForPayment"
+            (click)="useEmailForPayment = true">
+            By Email
+          </button>
+          <button 
+            class="toggle-btn" 
+            [class.active]="!useEmailForPayment"
+            (click)="useEmailForPayment = false">
+            By User ID
+          </button>
+        </div>
+
+        <div class="form-group" *ngIf="useEmailForPayment">
+          <label>Recipient Email</label>
+          <input type="email" [(ngModel)]="quickPayment.paidToEmail" placeholder="user@example.com" />
+        </div>
+
+        <div class="form-group" *ngIf="!useEmailForPayment">
+          <label>Recipient User ID</label>
+          <input type="number" [(ngModel)]="quickPayment.paidTo" placeholder="Enter user ID" />
+        </div>
+
+        <div class="form-group">
+          <label>Amount</label>
+          <input type="number" [(ngModel)]="quickPayment.amount" placeholder="0.00" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label>Notes (optional)</label>
+          <input type="text" [(ngModel)]="quickPayment.notes" placeholder="What's this for?" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeQuickPaymentModal()">Cancel</button>
+        <button class="btn-primary" (click)="createQuickPayment()">
+          Record Payment
+        </button>
+      </div>
+    </div>
+  </div> 
+  -->
+</div>

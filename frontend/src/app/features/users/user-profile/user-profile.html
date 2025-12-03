@@ -1,0 +1,89 @@
+<div class="profile-container">
+  <nav class="navbar">
+    <div class="navbar-left">
+      <button class="btn-back" routerLink="/">← Back to Dashboard</button>
+    </div>
+    <div class="navbar-right">
+      <button class="btn-icon" (click)="logout()">
+        <span class="icon">🚪</span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="content">
+    <div class="profile-card">
+      <div class="profile-header">
+        <div class="profile-avatar">
+          <span class="icon xlarge">👤</span>
+        </div>
+        <h2>{{ user?.name }}</h2>
+        <p class="text-muted">{{ user?.email }}</p>
+      </div>
+
+      <div class="profile-body">
+        <div *ngIf="!editing" class="profile-view">
+          <div class="info-row">
+            <span class="info-label">Name</span>
+            <span class="info-value">{{ user?.name }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Email</span>
+            <span class="info-value">{{ user?.email }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Member Since</span>
+            <span class="info-value">{{ user?.createdAt | date:'mediumDate' }}</span>
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn-primary" (click)="toggleEdit()">
+              <span class="icon">✏️</span> Edit Profile
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="editing" class="profile-edit">
+          <div class="form-group">
+            <label>Name</label>
+            <input type="text" [(ngModel)]="editForm.name" />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" [(ngModel)]="editForm.email" />
+          </div>
+          
+          <div class="divider"></div>
+          <h3>Change Password</h3>
+          
+          <div class="form-group">
+            <label>Current Password</label>
+            <input type="password" [(ngModel)]="editForm.password" />
+          </div>
+          <div class="form-group">
+            <label>New Password</label>
+            <input type="password" [(ngModel)]="editForm.confirmPassword" />
+          </div>
+          <div class="form-group">
+            <label>Confirm New Password</label>
+            <input type="password" [(ngModel)]="editForm.confirmPassword" />
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn-secondary" (click)="toggleEdit()">Cancel</button>
+            <button class="btn-primary" (click)="saveProfile()">
+              <span class="icon">💾</span> Save Changes
+            </button>
+          </div>
+        </div>
+
+        <div class="danger-zone">
+          <h3>Danger Zone</h3>
+          <p>Once you delete your account, there is no going back.</p>
+          <button class="btn-danger" (click)="deleteAccount()">
+            <span class="icon">🗑️</span> Delete Account
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

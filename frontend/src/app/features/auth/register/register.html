@@ -1,0 +1,67 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="icon-circle">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <line x1="19" y1="8" x2="19" y2="14"></line>
+          <line x1="22" y1="11" x2="16" y2="11"></line>
+        </svg>
+      </div>
+      <h1>Create Account</h1>
+      <p>Sign up to get started</p>
+    </div>
+    <form (ngSubmit)="register()" class="auth-form">
+      <div class="form-group">
+        <label for="name">Username</label>
+        <input 
+          type="text" 
+          id="name"
+          [(ngModel)]="name" 
+          name="name" 
+          placeholder="Enter your username" 
+          required 
+          [disabled]="loading"
+        />
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email"
+          [(ngModel)]="email" 
+          name="email" 
+          placeholder="Enter your email" 
+          required 
+          [disabled]="loading"
+        />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input 
+          type="password" 
+          id="password"
+          [(ngModel)]="password" 
+          name="password" 
+          placeholder="Enter your password" 
+          required 
+          [disabled]="loading"
+        />
+      </div>
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
+      </div>
+      <button type="submit" class="btn-primary" [disabled]="loading">
+        <span *ngIf="!loading">Create Account</span>
+        <span *ngIf="loading">Creating account...</span>
+      </button>
+    </form>
+    <div class="auth-footer">
+      <p>
+        Already have an account?
+        <a routerLink="/login">Sign in</a>
+      </p>
+    </div>
+  </div>
+</div>

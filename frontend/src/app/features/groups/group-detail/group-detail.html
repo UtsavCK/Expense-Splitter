@@ -1,0 +1,294 @@
+<div class="group-detail">
+  <nav class="navbar">
+    <div class="navbar-left">
+      <button class="btn-back" routerLink="/">← Back</button>
+      <h2 *ngIf="group">{{ group.name }}</h2>
+    </div>
+    <div class="navbar-right">
+      <button class="btn-icon" (click)="logout()">
+        <span class="icon">🚪</span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="action-buttons">
+    <button class="btn-action primary" (click)="openAddExpenseModal()">
+      <span class="icon">💰</span> Add Expense
+    </button>
+    <button class="btn-action secondary" (click)="openAddMemberModal()">
+      <span class="icon">➕</span> Add Member
+    </button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab" [class.active]="activeTab === 'expenses'" (click)="setActiveTab('expenses')">
+      <span class="icon">💳</span> Expenses ({{ expenses.length }})
+    </button>
+    <button class="tab" [class.active]="activeTab === 'members'" (click)="setActiveTab('members')">
+      <span class="icon">👥</span> Members ({{ members.length }})
+    </button>
+    <button class="tab" [class.active]="activeTab === 'balances'" (click)="setActiveTab('balances')">
+      <span class="icon">⚖️</span> Balances
+    </button>
+    <button class="tab" [class.active]="activeTab === 'settlement'" (click)="setActiveTab('settlement')">
+      <span class="icon">✅</span> Settlement
+    </button>
+  </div>
+
+  <div class="content" *ngIf="!loading">
+    <!-- Expenses Tab -->
+    <div *ngIf="activeTab === 'expenses'" class="list">
+      <div *ngFor="let expense of expenses" class="list-item">
+        <span class="icon">💰</span>
+        <div class="list-content">
+          <div class="list-title">{{ expense.description }}</div>
+          <div class="list-subtitle">
+            Paid by {{ expense.paidByName }} • {{ expense.expenseDate | date:'mediumDate' }} • 
+            {{ expense.participants.length }} participant(s)
+          </div>
+          <div class="participants-preview">
+            <span *ngFor="let p of expense.participants" class="participant-tag">
+              {{ p.userName }}: ${{ p.shareAmount.toFixed(2) }}
+            </span>
+          </div>
+        </div>
+        <div class="list-amount">${{ expense.amount.toFixed(2) }}</div>
+      </div>
+      <div *ngIf="expenses.length === 0" class="empty-state">
+        <span class="icon xlarge">📝</span>
+        <h3>No expenses yet</h3>
+        <button class="btn-primary" (click)="openAddExpenseModal()">
+          <span class="icon">➕</span> Add Expense
+        </button>
+      </div>
+    </div>
+
+    <!-- Members Tab -->
+    <div *ngIf="activeTab === 'members'" class="list">
+      <div *ngFor="let member of members" class="list-item">
+        <span class="icon">👤</span>
+        <div class="list-content">
+          <div class="list-title">{{ member.userName }}</div>
+          <div class="list-subtitle">{{ member.userEmail }} • Joined {{ member.joinedAt | date:'mediumDate' }}</div>
+        </div>
+        <button class="btn-danger-sm" (click)="confirmRemoveMember(member.userId, member.userName)">
+          {{ member.userId === user?.userId ? 'Leave' : 'Remove' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ✅ FIXED: Balances Tab -->
+    <div *ngIf="activeTab === 'balances'" class="balances-content">
+      <div *ngIf="balances && balances.balances.length > 0" class="list">
+        <div *ngFor="let balance of balances.balances" class="list-item">
+          <span class="icon">💸</span>
+          <div class="list-content">
+            <div class="list-title">{{ balance.fromUserName }} owes {{ balance.toUserName }}</div>
+          </div>
+          <div class="list-amount negative">${{ balance.amount.toFixed(2) }}</div>
+        </div>
+      </div>
+      <div *ngIf="!balances || balances.balances.length === 0" class="empty-state">
+        <span class="icon xlarge">🎉</span>
+        <h3>All balanced!</h3>
+        <p>Everyone is settled up in this group</p>
+      </div>
+    </div>
+
+    <!-- ✅ FIXED: Settlement Tab -->
+    <div *ngIf="activeTab === 'settlement'" class="settlement-content">
+      <div *ngIf="settlementPlan && settlementPlan.suggestions.length > 0">
+        <div class="settlement-summary">
+          <h3>{{ settlementPlan.summary }}</h3>
+          <p>Optimized: {{ settlementPlan.originalTransactionCount }} → 
+             {{ settlementPlan.optimizedTransactionCount }} transaction(s)</p>
+        </div>
+        <div class="list">
+          <div *ngFor="let suggestion of settlementPlan.suggestions" class="list-item settlement">
+            <span class="icon">💸</span>
+            <div class="list-content">
+              <div class="list-title">{{ suggestion.description }}</div>
+              <div class="list-subtitle">
+                {{ suggestion.fromUserName }} → {{ suggestion.toUserName }}
+              </div>
+            </div>
+            <div class="list-amount negative">${{ suggestion.amount.toFixed(2) }}</div>
+          </div>
+        </div>
+        <button class="btn-primary full-width" (click)="confirmExecuteSettlement()">
+          <span class="icon">✅</span> Execute Settlement Plan
+        </button>
+      </div>
+      <div *ngIf="!settlementPlan || settlementPlan.suggestions.length === 0" class="empty-state">
+        <span class="icon xlarge">✨</span>
+        <h3>All settled!</h3>
+        <p>{{ settlementPlan?.summary || 'No settlements needed' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="loading" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading group data...</p>
+  </div>
+
+  <!-- Add Member Modal -->
+  <div class="modal-overlay" *ngIf="showAddMemberModal" (click)="closeAddMemberModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Add Member</h2>
+        <button class="btn-close" (click)="closeAddMemberModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="toggle-group">
+          <button 
+            class="toggle-btn" 
+            [class.active]="useEmailForMember"
+            (click)="useEmailForMember = true">
+            By Email
+          </button>
+          <button 
+            class="toggle-btn" 
+            [class.active]="!useEmailForMember"
+            (click)="useEmailForMember = false">
+            By User ID
+          </button>
+        </div>
+
+        <div class="form-group" *ngIf="useEmailForMember">
+          <label>User Email</label>
+          <input 
+            type="email" 
+            [(ngModel)]="newMemberEmail" 
+            (input)="onMemberSearchInput($event)"
+            placeholder="Search by email..." 
+            autocomplete="off"
+          />
+          
+          <div class="search-results" *ngIf="userSearchResults.length > 0">
+            <div 
+              *ngFor="let user of userSearchResults" 
+              class="search-result-item"
+              (click)="selectUserFromSearch(user)">
+              <span class="icon">👤</span>
+              <div>
+                <div class="result-name">{{ user.name }}</div>
+                <div class="result-email">{{ user.email }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="!useEmailForMember">
+          <label>User ID</label>
+          <input type="number" [(ngModel)]="newMemberUserId" placeholder="Enter user ID" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAddMemberModal()">Cancel</button>
+        <button class="btn-primary" (click)="addMember()">
+          Add Member
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Expense Modal (same as before) -->
+  <div class="modal-overlay" *ngIf="showAddExpenseModal" (click)="closeAddExpenseModal()">
+    <div class="modal large" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Add Expense</h2>
+        <button class="btn-close" (click)="closeAddExpenseModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" [(ngModel)]="newExpense.description" placeholder="e.g., Dinner, Hotel" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Amount</label>
+            <input type="number" [(ngModel)]="newExpense.amount" placeholder="0.00" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" [(ngModel)]="newExpense.expenseDate" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Paid By</label>
+          <select [(ngModel)]="newExpense.paidBy">
+            <option *ngFor="let member of members" [value]="member.userId">
+              {{ member.userName }}
+            </option>
+          </select>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="participants-section">
+          <div class="section-header">
+            <h3>Participants</h3>
+            <button class="btn-secondary-sm" (click)="splitEqually()">
+              Split Equally
+            </button>
+          </div>
+
+          <div class="participant-list" *ngIf="newExpense.participants.length > 0">
+            <div *ngFor="let p of newExpense.participants" class="participant-item">
+              <span class="icon">👤</span>
+              <span>{{ p.userName }}</span>
+              <span class="participant-amount">${{ p.shareAmount.toFixed(2) }}</span>
+              <button class="btn-remove" (click)="removeParticipant(p.userId)">✕</button>
+            </div>
+          </div>
+
+          <div class="add-participant">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Member</label>
+                <select [(ngModel)]="tempParticipant.userId">
+                  <option [value]="0">-- Select member --</option>
+                  <option *ngFor="let member of members" [value]="member.userId">
+                    {{ member.userName }}
+                  </option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Share Amount</label>
+                <input type="number" [(ngModel)]="tempParticipant.shareAmount" placeholder="0.00" step="0.01" />
+              </div>
+            </div>
+            <button class="btn-secondary-sm" (click)="addParticipant()">
+              <span class="icon">➕</span> Add Participant
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeAddExpenseModal()">Cancel</button>
+        <button class="btn-primary" (click)="addExpense()">
+          Add Expense
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ NEW: Confirmation Modal -->
+  <div class="modal-overlay" *ngIf="showConfirmModal" (click)="closeConfirmModal()">
+    <div class="modal confirm-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ confirmModalData?.title }}</h2>
+      </div>
+      <div class="modal-body">
+        <p>{{ confirmModalData?.message }}</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeConfirmModal()">Cancel</button>
+        <button class="btn-danger" (click)="confirmModalData.action()">
+          Confirm
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
