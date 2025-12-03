@@ -30,7 +30,8 @@ public class UserWebMapper {
     return new UserUpdateDto(
             req.name(),
             req.email(),
-            req.password()
+            req.currentPassword(),
+            req.newPassword()
     );
   }
 }

@@ -3,6 +3,7 @@ package com.example.backend.web.controller;
 import com.example.backend.application.dto.user.UserResponseDto;
 import com.example.backend.application.dto.user.UserSearchResultDto;
 import com.example.backend.application.dto.user.UserStatsDto;
+import com.example.backend.application.dto.user.UserUpdateDto;
 import com.example.backend.application.usecase.UserUseCase;
 import com.example.backend.web.dto.user.*;
 import com.example.backend.web.security.CurrentUser;
@@ -26,19 +27,27 @@ public class UserController {
             .orElse(ResponseEntity.notFound().build());
   }
 
-  @PutMapping("/me")
-  public ResponseEntity<UserResponseDto> updateMyProfile(
-          @CurrentUser Long userId,
-          @RequestBody UserUpdateRequest request
-  ) {
-    var updateDto = new UserUpdateRequest(
-            request.name(),
-            request.email(),
-            request.password()
-    );
+@PutMapping("/me")
+public ResponseEntity<UserResponseDto> updateMyProfile(
+        @CurrentUser Long userId,
+        @RequestBody UserUpdateRequest request
+) {
+  var updateDto = new UserUpdateDto(
+          request.name(),
+          null,
+          request.currentPassword(),
+          request.newPassword()
+  );
+
+  try {
     var updated = userService.updateUser(userId, updateDto);
     return ResponseEntity.ok(updated);
+  } catch (IllegalArgumentException e) {
+    return ResponseEntity.badRequest()
+            .header("X-Error-Message", e.getMessage())
+            .build();
   }
+}
 
   @DeleteMapping("/me")
   public ResponseEntity<Void> deleteMyAccount(@CurrentUser Long userId) {

@@ -10,7 +10,6 @@ import com.example.backend.domain.repository.ExpenseRepository;
 import com.example.backend.domain.repository.GroupMemberRepository;
 import com.example.backend.domain.repository.PaymentRepository;
 import com.example.backend.domain.repository.UserRepository;
-import com.example.backend.web.dto.user.UserUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -38,33 +37,28 @@ public class UserApplicationService implements UserUseCase {
     return userRepository.findById(id).map(UserMapper::toDto);
   }
 
-  @Override
-  public UserResponseDto updateUser(Long id, UserUpdateRequest dto) {
-    User user = userRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+@Override
+public UserResponseDto updateUser(Long id, UserUpdateDto dto) {
+  User user = userRepository.findById(id)
+          .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-    // Update name if provided
-    if (dto.name() != null && !dto.name().isBlank()) {
-      user.setName(dto.name());
-    }
-
-    // Update email if provided and not taken
-    if (dto.email() != null && !dto.email().isBlank()) {
-      if (!dto.email().equals(user.getEmail()) &&
-              userRepository.existsByEmail(dto.email())) {
-        throw new IllegalArgumentException("Email already in use");
-      }
-      user.setEmail(dto.email());
-    }
-
-    // Update password if provided
-    if (dto.password() != null && !dto.password().isBlank()) {
-      user.setPasswordHash(encoder.encode(dto.password()));
-    }
-
-    User updated = userRepository.save(user);
-    return UserMapper.toDto(updated);
+  if (dto.name() != null && !dto.name().isBlank()) {
+    user.setName(dto.name());
   }
+
+  if (dto.newPassword() != null && !dto.newPassword().isBlank()) {
+    if (dto.currentPassword() == null || dto.currentPassword().isBlank()) {
+      throw new IllegalArgumentException("Current password is required to change password");
+    }
+    if (!encoder.matches(dto.currentPassword(), user.getPasswordHash())) {
+      throw new IllegalArgumentException("Current password is incorrect");
+    }
+    user.setPasswordHash(encoder.encode(dto.newPassword()));
+  }
+
+  User updated = userRepository.save(user);
+  return UserMapper.toDto(updated);
+}
 
   @Override
   public void deleteUser(Long id) {

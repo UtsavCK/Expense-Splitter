@@ -28,6 +28,7 @@ public final class UserMapper {
   public static void updateDomain(User user, UserUpdateRequest dto) {
     if (dto.name() != null) user.setName(dto.name());
     if (dto.email() != null) user.setEmail(dto.email());
-    if (dto.password() != null) user.setPasswordHash(dto.password());
+    if (dto.currentPassword() != null) user.setPasswordHash(dto.currentPassword());
+    if (dto.newPassword() != null) user.setPasswordHash(dto.newPassword());
   }
 }
