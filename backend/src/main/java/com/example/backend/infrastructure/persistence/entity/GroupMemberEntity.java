@@ -34,4 +34,11 @@ public class GroupMemberEntity {
 
   @Column(name = "joined_at")
   private LocalDateTime joinedAt = LocalDateTime.now();
+
+  @PrePersist
+  protected void onCreate() {
+    if (joinedAt == null) {
+      joinedAt = LocalDateTime.now();
+    }
+  }
 }

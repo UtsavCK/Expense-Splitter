@@ -22,7 +22,9 @@ public class PaymentMapper {
     return new PaymentResponseDto(
             payment.getPaymentId(),
             payment.getPaidBy().getUserId(),
+            payment.getPaidBy().getName(),
             payment.getPaidTo().getUserId(),
+            payment.getPaidTo().getName(),
             payment.getAmount(),
             payment.getPaymentDate(),
             payment.getNotes()

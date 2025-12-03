@@ -8,6 +8,7 @@ public record ExpenseResponse(
         Long expenseId,
         Long groupId,
         Long paidBy,
+        String paidByName,
         BigDecimal amount,
         String description,
         LocalDate expenseDate,

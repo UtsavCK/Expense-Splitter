@@ -9,4 +9,5 @@ public interface ExpenseRepository {
   Expense save(Expense expense);
   Optional<Expense> findById(Long id);
   List<Expense> findByGroupId(Long groupId);
+  List<Expense> findByPaidByUserId(Long userId);
 }

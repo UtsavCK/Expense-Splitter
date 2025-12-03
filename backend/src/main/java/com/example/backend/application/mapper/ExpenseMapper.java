@@ -9,6 +9,7 @@ import com.example.backend.domain.model.expense.ExpenseParticipant;
 import com.example.backend.domain.model.group.Group;
 import com.example.backend.domain.model.user.User;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class ExpenseMapper {
@@ -21,6 +22,7 @@ public class ExpenseMapper {
             .description(dto.description())
             .amount(dto.amount())
             .expenseDate(dto.expenseDate())
+            .createdAt(LocalDateTime.now())
             .build();
   }
 
@@ -29,6 +31,7 @@ public class ExpenseMapper {
             e.getExpenseId(),
             e.getGroup().getGroupId(),
             e.getPaidBy().getUserId(),
+            e.getPaidBy().getName(),
             e.getAmount(),
             e.getDescription(),
             e.getExpenseDate(),
@@ -50,6 +53,7 @@ public class ExpenseMapper {
     return new ExpenseParticipantResponseDto(
             p.getExpenseParticipantId(),
             p.getUser().getUserId(),
+            p.getUser().getName(),
             p.getShareAmount(),
             p.getSplitType());
   }

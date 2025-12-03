@@ -1,6 +1,10 @@
 package com.example.backend.domain.service;
 
+import com.example.backend.domain.model.group.Group;
+import com.example.backend.domain.model.user.User;
 import com.example.backend.domain.repository.GroupMemberRepository;
+import com.example.backend.domain.repository.GroupRepository;
+import com.example.backend.domain.repository.UserRepository;
 import com.example.backend.infrastructure.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -9,6 +13,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthorizationDomainService {
 
+  private final UserRepository userRepository;
+  private final GroupRepository groupRepository;
   private final GroupMemberRepository groupMemberRepository;
 
   public boolean isGroupMember(Long userId, Long groupId) {
@@ -17,16 +23,28 @@ public class AuthorizationDomainService {
 
   public void requireGroupMembership(Long userId, Long groupId) {
     if (!isGroupMember(userId, groupId)) {
+      String userName = userRepository.findById(userId)
+              .map(User::getName)
+              .orElse("User " + userId);
+      String groupName = groupRepository.findById(groupId)
+              .map(Group::getName)
+              .orElse("Group " + groupId);
       throw new UnauthorizedException(
-              String.format("User %d is not a member of group %d", userId, groupId)
+              String.format("%s is not a member of '%s'", userName, groupName)
       );
     }
   }
 
   public void requireGroupAccess(Long userId, Long groupId, String action) {
     if (!isGroupMember(userId, groupId)) {
+      String userName = userRepository.findById(userId)
+              .map(User::getName)
+              .orElse("User " + userId);
+      String groupName = groupRepository.findById(groupId)
+              .map(Group::getName)
+              .orElse("Group " + groupId);
       throw new UnauthorizedException(
-              String.format("User %d cannot %s in group %d - not a member", userId, action, groupId)
+              String.format("%s cannot %s in '%s' - not a member", userName, action, groupName)
       );
     }
   }

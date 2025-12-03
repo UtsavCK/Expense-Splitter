@@ -6,7 +6,9 @@ import java.time.LocalDate;
 public record PaymentResponse(
         Long paymentId,
         Long paidBy,
+        String paidByName,
         Long paidTo,
+        String paidToName,
         BigDecimal amount,
         LocalDate paymentDate,
         String notes

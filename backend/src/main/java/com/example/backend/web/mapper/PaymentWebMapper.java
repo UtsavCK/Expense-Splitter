@@ -21,7 +21,9 @@ public class PaymentWebMapper {
     return new PaymentResponse(
             dto.paymentId(),
             dto.paidBy(),
+            dto.paidByName(),
             dto.paidTo(),
+            dto.paidToName(),
             dto.amount(),
             dto.paymentDate(),
             dto.notes()

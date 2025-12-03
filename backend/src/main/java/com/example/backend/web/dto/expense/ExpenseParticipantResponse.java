@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 public record ExpenseParticipantResponse(
         Long expenseParticipantId,
         Long userId,
+        String userName,
         BigDecimal shareAmount,
         String splitType
 ) {}

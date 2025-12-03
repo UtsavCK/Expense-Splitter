@@ -9,6 +9,7 @@ public record ExpenseResponseDto(
         Long expenseId,
         Long groupId,
         Long paidBy,
+        String paidByName,
         BigDecimal amount,
         String description,
         LocalDate expenseDate,

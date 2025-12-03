@@ -10,6 +10,8 @@ public class GroupMemberMapper {
             gm.getGroupMemberId(),
             gm.getGroup().getGroupId(),
             gm.getUser().getUserId(),
+            gm.getUser().getName(),
+            gm.getUser().getEmail(),
             gm.getJoinedAt()
     );
   }

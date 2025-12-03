@@ -36,4 +36,11 @@ public class ExpenseRepositoryAdapter implements ExpenseRepository {
             .map(ExpenseEntityMapper::toDomain)
             .toList();
   }
+
+  @Override
+  public List<Expense> findByPaidByUserId(Long userId) {
+    return jpaRepo.findByPaidBy_UserId(userId).stream()
+            .map(ExpenseEntityMapper::toDomain)
+            .toList();
+  }
 }

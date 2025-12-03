@@ -16,6 +16,8 @@ public class GroupMemberWebMapper {
             dto.groupMemberId(),
             dto.groupId(),
             dto.userId(),
+            dto.userName(),
+            dto.userEmail(),
             dto.joinedAt()
     );
   }

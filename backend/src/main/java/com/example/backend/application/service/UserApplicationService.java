@@ -1,9 +1,14 @@
 package com.example.backend.application.service;
 
+import com.example.backend.application.dto.balance.BalanceDto;
 import com.example.backend.application.dto.user.*;
 import com.example.backend.application.mapper.UserMapper;
 import com.example.backend.application.usecase.UserUseCase;
+import com.example.backend.domain.model.expense.Expense;
 import com.example.backend.domain.model.user.User;
+import com.example.backend.domain.repository.ExpenseRepository;
+import com.example.backend.domain.repository.GroupMemberRepository;
+import com.example.backend.domain.repository.PaymentRepository;
 import com.example.backend.domain.repository.UserRepository;
 import com.example.backend.web.dto.user.UserUpdateRequest;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -19,6 +26,10 @@ import java.util.Optional;
 public class UserApplicationService implements UserUseCase {
 
   private final UserRepository userRepository;
+  private final GroupMemberRepository groupMemberRepository;
+  private final ExpenseRepository expenseRepository;
+  private final PaymentRepository paymentRepository;
+  private final BalanceApplicationService balanceService;
   private final PasswordEncoder encoder;
 
   @Override
@@ -32,10 +43,22 @@ public class UserApplicationService implements UserUseCase {
     User user = userRepository.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-    UserMapper.updateDomain(user, dto);
+    // Update name if provided
+    if (dto.name() != null && !dto.name().isBlank()) {
+      user.setName(dto.name());
+    }
 
-    // Encode password if changed
-    if (dto.password() != null && !dto.password().isEmpty()) {
+    // Update email if provided and not taken
+    if (dto.email() != null && !dto.email().isBlank()) {
+      if (!dto.email().equals(user.getEmail()) &&
+              userRepository.existsByEmail(dto.email())) {
+        throw new IllegalArgumentException("Email already in use");
+      }
+      user.setEmail(dto.email());
+    }
+
+    // Update password if provided
+    if (dto.password() != null && !dto.password().isBlank()) {
       user.setPasswordHash(encoder.encode(dto.password()));
     }
 
@@ -55,5 +78,82 @@ public class UserApplicationService implements UserUseCase {
   @Transactional(readOnly = true)
   public Optional<UserResponseDto> getUserByEmail(String email) {
     return userRepository.findByEmail(email).map(UserMapper::toDto);
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public List<UserSearchResultDto> searchUsers(String query) {
+    List<User> users;
+
+    if (query.contains("@")) {
+      // Search by email
+      users = userRepository.findByEmail(query)
+              .map(List::of)
+              .orElse(List.of());
+    } else {
+      // Search by name (you'll need to add this to repository)
+      users = userRepository.findByNameContainingIgnoreCase(query);
+    }
+
+    return users.stream()
+            .map(user -> new UserSearchResultDto(
+                    user.getUserId(),
+                    user.getName(),
+                    user.getEmail()
+            ))
+            .toList();
+  }
+
+  @Override
+  @Transactional(readOnly = true)
+  public UserStatsDto getUserStats(Long userId) {
+    // Validate user exists
+    if (!userRepository.existsById(userId)) {
+      throw new IllegalArgumentException("User not found");
+    }
+
+    // Count groups
+    int totalGroups = groupMemberRepository.findByUserId(userId).size();
+
+    // Count expenses where user is payer
+    int totalExpenses = expenseRepository.findByPaidByUserId(userId).size();
+
+    // Count payments
+    int totalPaymentsMade = paymentRepository.findByPaidBy(userId).size();
+    int totalPaymentsReceived = paymentRepository.findByPaidTo(userId).size();
+
+    // Calculate total paid (sum of all expenses where user is payer)
+    BigDecimal totalPaid = expenseRepository.findByPaidByUserId(userId).stream()
+            .map(Expense::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+    // Calculate total owed and owing from balances
+    List<BalanceDto> balances = balanceService.getUserBalances(userId);
+
+    BigDecimal totalOwed = BigDecimal.ZERO;  // Others owe me
+    BigDecimal totalOwing = BigDecimal.ZERO; // I owe others
+
+    for (BalanceDto balance : balances) {
+      if (balance.fromUserId().equals(userId)) {
+        // I owe someone
+        totalOwing = totalOwing.add(balance.amount());
+      } else if (balance.toUserId().equals(userId)) {
+        // Someone owes me
+        totalOwed = totalOwed.add(balance.amount());
+      }
+    }
+
+    // Net balance = what I'm owed - what I owe
+    BigDecimal netBalance = totalOwed.subtract(totalOwing);
+
+    return new UserStatsDto(
+            totalGroups,
+            totalExpenses,
+            totalPaymentsMade,
+            totalPaymentsReceived,
+            totalPaid,
+            totalOwed,
+            netBalance
+    );
   }
 }

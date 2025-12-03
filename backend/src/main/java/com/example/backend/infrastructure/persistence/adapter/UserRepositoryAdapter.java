@@ -55,4 +55,11 @@ public class UserRepositoryAdapter implements UserRepository {
   public boolean existsById(Long id) {
     return jpaRepo.existsById(id);
   }
+
+  @Override
+  public List<User> findByNameContainingIgnoreCase(String name) {
+    return jpaRepo.findByNameContainingIgnoreCase(name).stream()
+            .map(UserEntityMapper::toDomain)
+            .toList();
+  }
 }

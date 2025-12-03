@@ -27,7 +27,8 @@ public class BalanceDomainService {
           List<ExpenseParticipant> allParticipants,
           List<Payment> payments
   ) {
-    // Map to track net balances: Key = "userId1-userId2", Value = amount
+    // Map to track net balances: Key = "fromUserId->toUserId", Value = amount
+    // This is DIRECTIONAL - we track who owes whom
     Map<String, BigDecimal> netBalances = new HashMap<>();
 
     // Step 1: Process expenses
@@ -41,6 +42,7 @@ public class BalanceDomainService {
 
       for (ExpenseParticipant participant : expenseParticipants) {
         Long participantId = participant.getUser().getUserId();
+        BigDecimal participantShare = participant.getShareAmount();
 
         // Skip if payer is also participant (they don't owe themselves)
         if (payerId.equals(participantId)) {
@@ -48,8 +50,9 @@ public class BalanceDomainService {
         }
 
         // Participant owes payer their share
-        String key = getBalanceKey(participantId, payerId);
-        netBalances.merge(key, participant.getShareAmount(), BigDecimal::add);
+        // Use DIRECTIONAL key: participant->payer
+        String key = participantId + "->" + payerId;
+        netBalances.merge(key, participantShare, BigDecimal::add);
       }
     }
 
@@ -58,14 +61,55 @@ public class BalanceDomainService {
       Long fromUserId = payment.getPaidBy().getUserId();
       Long toUserId = payment.getPaidTo().getUserId();
 
-      String key = getBalanceKey(fromUserId, toUserId);
+      // Payment reduces the debt from->to
+      String key = fromUserId + "->" + toUserId;
       netBalances.merge(key, payment.getAmount().negate(), BigDecimal::add);
     }
 
-    // Step 3: Convert to Balance objects
-    List<Balance> balances = new ArrayList<>();
+    // Step 3: Consolidate bidirectional debts
+    Map<String, BigDecimal> consolidated = new HashMap<>();
+    Set<String> processed = new HashSet<>();
 
     for (Map.Entry<String, BigDecimal> entry : netBalances.entrySet()) {
+      String key = entry.getKey();
+      if (processed.contains(key)) {
+        continue;
+      }
+
+      String[] parts = key.split("->");
+      Long userId1 = Long.parseLong(parts[0]);
+      Long userId2 = Long.parseLong(parts[1]);
+
+      // Get debt in both directions
+      BigDecimal debt12 = netBalances.getOrDefault(userId1 + "->" + userId2, BigDecimal.ZERO);
+      BigDecimal debt21 = netBalances.getOrDefault(userId2 + "->" + userId1, BigDecimal.ZERO);
+
+      // Calculate net debt
+      BigDecimal netDebt = debt12.subtract(debt21);
+
+      // Mark both directions as processed
+      processed.add(userId1 + "->" + userId2);
+      processed.add(userId2 + "->" + userId1);
+
+      // Store consolidated debt if non-zero
+      if (netDebt.compareTo(BigDecimal.ZERO) != 0) {
+        // Use consistent key (smaller ID first)
+        String consolidatedKey = getBalanceKey(userId1, userId2);
+
+        if (netDebt.compareTo(BigDecimal.ZERO) > 0) {
+          // userId1 owes userId2
+          consolidated.put(consolidatedKey, netDebt.abs());
+        } else {
+          // userId2 owes userId1 (debt is negative, so flip)
+          consolidated.put(consolidatedKey, netDebt.abs());
+        }
+      }
+    }
+
+    // Step 4: Convert to Balance objects
+    List<Balance> balances = new ArrayList<>();
+
+    for (Map.Entry<String, BigDecimal> entry : consolidated.entrySet()) {
       BigDecimal amount = entry.getValue().setScale(2, RoundingMode.HALF_UP);
 
       // Only include non-zero balances
@@ -74,19 +118,24 @@ public class BalanceDomainService {
         Long userId1 = Long.parseLong(userIds[0]);
         Long userId2 = Long.parseLong(userIds[1]);
 
-        // If positive, userId1 owes userId2
-        // If negative, userId2 owes userId1 (flip it)
-        if (amount.compareTo(BigDecimal.ZERO) > 0) {
+        // Determine direction based on original net debt
+        BigDecimal debt12 = netBalances.getOrDefault(userId1 + "->" + userId2, BigDecimal.ZERO);
+        BigDecimal debt21 = netBalances.getOrDefault(userId2 + "->" + userId1, BigDecimal.ZERO);
+        BigDecimal netDebt = debt12.subtract(debt21);
+
+        if (netDebt.compareTo(BigDecimal.ZERO) > 0) {
+          // userId1 owes userId2
           balances.add(Balance.builder()
                   .fromUserId(userId1)
                   .toUserId(userId2)
                   .amount(amount)
                   .build());
         } else {
+          // userId2 owes userId1
           balances.add(Balance.builder()
                   .fromUserId(userId2)
                   .toUserId(userId1)
-                  .amount(amount.abs())
+                  .amount(amount)
                   .build());
         }
       }

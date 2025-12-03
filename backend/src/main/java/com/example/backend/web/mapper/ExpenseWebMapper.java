@@ -36,6 +36,7 @@ public class ExpenseWebMapper {
             .map(p -> new ExpenseParticipantResponse(
                     p.expenseParticipantId(),
                     p.userId(),
+                    p.userName(),
                     p.shareAmount(),
                     p.splitType()
             )).toList();
@@ -44,6 +45,7 @@ public class ExpenseWebMapper {
             dto.expenseId(),
             dto.groupId(),
             dto.paidBy(),
+            dto.paidByName(),
             dto.amount(),
             dto.description(),
             dto.expenseDate(),
