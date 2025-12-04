@@ -49,19 +49,18 @@
           </div>
           <div class="form-group">
             <label>Email</label>
-            <input type="email" [(ngModel)]="editForm.email" />
+            <input type="email" [value]="user?.email" disabled />
           </div>
-          
+
           <div class="divider"></div>
           <h3>Change Password</h3>
-          
           <div class="form-group">
             <label>Current Password</label>
-            <input type="password" [(ngModel)]="editForm.password" />
+            <input type="password" [(ngModel)]="editForm.currentPassword" />
           </div>
           <div class="form-group">
             <label>New Password</label>
-            <input type="password" [(ngModel)]="editForm.confirmPassword" />
+            <input type="password" [(ngModel)]="editForm.newPassword" />
           </div>
           <div class="form-group">
             <label>Confirm New Password</label>

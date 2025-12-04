@@ -32,11 +32,9 @@ export class DashboardComponent implements OnInit {
   loading = true;
   activeTab = 'overview';
   
-  // Modal states
   showCreateGroupModal = false;
   showQuickPaymentModal = false;
   
-  // Forms
   newGroupName = '';
   quickPayment = {
     paidTo: 0,
@@ -229,20 +227,20 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  // ✅ NEW: Toast notification system
+  isGroupSettled(group: Group): boolean {
+    return group.isSettled || false;
+  }
+
+  getGroupStatusBadge(group: Group): string {
+    return this.isGroupSettled(group) ? 'Settled' : 'Active';
+  }
+
   private showNotification(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
-    // Create toast element
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.textContent = message;
-    
-    // Add to body
     document.body.appendChild(toast);
-    
-    // Trigger animation
     setTimeout(() => toast.classList.add('show'), 10);
-    
-    // Remove after 3 seconds
     setTimeout(() => {
       toast.classList.remove('show');
       setTimeout(() => document.body.removeChild(toast), 300);

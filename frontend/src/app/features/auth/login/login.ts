@@ -9,18 +9,16 @@ import { AuthService } from '../../../core/services/auth-service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './login.html',
-  styleUrls: ['./login.css']
+  styleUrls: ['./login.css'],
 })
 export class LoginComponent {
   email = '';
   password = '';
   errorMessage = '';
   loading = false;
+  passwordVisible = false;
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  constructor(private authService: AuthService, private router: Router) {}
 
   login(): void {
     if (!this.email || !this.password) {
@@ -38,7 +36,11 @@ export class LoginComponent {
       error: (error) => {
         this.errorMessage = error.error?.message || 'Login failed. Please try again.';
         this.loading = false;
-      }
+      },
     });
+  }
+
+  togglePasswordVisibility(): void {
+    this.passwordVisible = !this.passwordVisible;
   }
 }

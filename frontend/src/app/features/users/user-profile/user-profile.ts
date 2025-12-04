@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth-service';
 import { UserService } from '../../../core/services/user-service';
 import { User } from '../../../core/models/user';
@@ -9,20 +9,21 @@ import { User } from '../../../core/models/user';
 @Component({
   selector: 'app-user-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   templateUrl: './user-profile.html',
-  styleUrls: ['./user-profile.css']
+  styleUrls: ['./user-profile.css'],
 })
 export class UserProfileComponent implements OnInit {
   user: User | null = null;
   loading = false;
   editing = false;
-  
+
   editForm = {
     name: '',
     email: '',
-    password: '',
-    confirmPassword: ''
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   };
 
   constructor(
@@ -44,7 +45,7 @@ export class UserProfileComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading profile:', error);
-      }
+      },
     });
   }
 
@@ -55,7 +56,8 @@ export class UserProfileComponent implements OnInit {
       if (this.user) {
         this.editForm.name = this.user.name;
         this.editForm.email = this.user.email;
-        this.editForm.password = '';
+        this.editForm.currentPassword = '';
+        this.editForm.newPassword = '';
         this.editForm.confirmPassword = '';
       }
     }
@@ -63,39 +65,42 @@ export class UserProfileComponent implements OnInit {
 
   saveProfile(): void {
     // Validate passwords match if changing password
-    if (this.editForm.password && this.editForm.password !== this.editForm.confirmPassword) {
+    if (this.editForm.newPassword && this.editForm.newPassword !== this.editForm.confirmPassword) {
       alert('Passwords do not match');
       return;
     }
 
     this.loading = true;
 
-    this.userService.updateProfile(
-      this.editForm.name,
-      this.editForm.email,
-      this.editForm.password || undefined
-    ).subscribe({
-      next: (updatedUser) => {
-        this.user = updatedUser;
-        this.editing = false;
-        this.editForm.password = '';
-        this.editForm.confirmPassword = '';
-        this.loading = false;
-        alert('Profile updated successfully!');
-      },
-      error: (error) => {
-        console.error('Error updating profile:', error);
-        alert('Failed to update profile: ' + (error.error?.message || 'Unknown error'));
-        this.loading = false;
-      }
-    });
+    this.userService
+      .updateProfile(
+        this.editForm.name,
+        this.editForm.email,
+        this.editForm.newPassword || undefined
+      )
+      .subscribe({
+        next: (updatedUser) => {
+          this.user = updatedUser;
+          this.editing = false;
+          this.editForm.currentPassword = '';
+          this.editForm.newPassword = '';
+          this.editForm.confirmPassword = '';
+          this.loading = false;
+          alert('Profile updated successfully!');
+        },
+        error: (error) => {
+          console.error('Error updating profile:', error);
+          alert('Failed to update profile: ' + (error.error?.message || 'Unknown error'));
+          this.loading = false;
+        },
+      });
   }
 
   deleteAccount(): void {
     const confirmation = prompt(
       'Are you sure you want to delete your account? Type "DELETE" to confirm.'
     );
-    
+
     if (confirmation !== 'DELETE') {
       return;
     }
@@ -111,7 +116,7 @@ export class UserProfileComponent implements OnInit {
         console.error('Error deleting account:', error);
         alert('Failed to delete account: ' + (error.error?.message || 'Unknown error'));
         this.loading = false;
-      }
+      },
     });
   }
 
