@@ -29,11 +29,19 @@ public class ExpenseApplicationService implements ExpenseUseCase {
   private final ExpenseRepository expenseRepository;
   private final ExpenseParticipantRepository participantRepository;
   private final GroupMemberRepository groupMemberRepository;
+  private final SettlementExecutionRepository settlementExecutionRepository;
   private final ExpenseDomainService expenseDomainService;
 
   @Override
   public ExpenseResponseDto addExpense(ExpenseRequestDto dto) {
     log.info("Starting addExpense with dto: {}", dto);
+
+    if (settlementExecutionRepository.existsByGroupId(dto.groupId())) {
+      throw new IllegalStateException(
+              "Cannot add expenses to this group. Settlement has already been executed. "
+                      + "No further expenses can be added to a settled group."
+      );
+    }
 
     // 1. Validate group exists
     log.debug("Validating group: {}", dto.groupId());

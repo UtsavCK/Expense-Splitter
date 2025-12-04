@@ -14,12 +14,13 @@ public class GroupWebMapper {
     );
   }
 
-  public static GroupResponse toWeb(GroupResponseDto dto) {
+  public static GroupResponse toWeb(GroupResponseDto dto, boolean isSettled) {
     return new GroupResponse(
             dto.groupId(),
             dto.name(),
             dto.createdByUserId(),
-            dto.createdAt().toString()
+            dto.createdAt().toString(),
+            isSettled
     );
   }
 }

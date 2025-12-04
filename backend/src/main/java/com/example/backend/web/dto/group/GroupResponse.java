@@ -4,5 +4,6 @@ public record GroupResponse(
         Long groupId,
         String name,
         Long createdByUserId,
-        String createdAt
+        String createdAt,
+        Boolean isSettled
 ) {}
