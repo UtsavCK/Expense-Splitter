@@ -9,8 +9,6 @@ public record PaymentResponse(
         String paidByName,
         Long paidTo,
         String paidToName,
-        Long groupId,
-        String groupName,
         BigDecimal amount,
         LocalDate paymentDate,
         String notes

@@ -23,6 +23,10 @@ public class CustomUserDetails implements UserDetails {
     return Collections.emptyList();
   }
 
+  public Long getUserId() {
+    return user.getUserId();
+  }
+
   @Override
   public String getPassword() {
     return user.getPasswordHash(); // must match your User domain property

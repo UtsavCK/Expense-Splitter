@@ -1,6 +1,5 @@
 package com.example.backend.domain.model.payment;
 
-import com.example.backend.domain.model.group.Group;
 import com.example.backend.domain.model.user.User;
 import lombok.*;
 
@@ -16,7 +15,6 @@ public class Payment {
   private Long paymentId;
   private User paidBy;
   private User paidTo;
-  private Group group;
   private BigDecimal amount;
   private LocalDate paymentDate;
   private String notes;

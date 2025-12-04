@@ -11,7 +11,6 @@ public class PaymentWebMapper {
     return new PaymentRequestDto(
             req.paidBy(),
             req.paidTo(),
-            req.groupId(),
             req.amount(),
             req.paymentDate(),
             req.notes()
@@ -25,8 +24,6 @@ public class PaymentWebMapper {
             dto.paidByName(),
             dto.paidTo(),
             dto.paidToName(),
-            dto.groupId(),
-            dto.groupName(),
             dto.amount(),
             dto.paymentDate(),
             dto.notes()

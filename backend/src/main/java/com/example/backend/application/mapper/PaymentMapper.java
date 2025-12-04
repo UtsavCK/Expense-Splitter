@@ -9,11 +9,10 @@ import com.example.backend.domain.model.user.User;
 public class PaymentMapper {
   private PaymentMapper() {}
 
-  public static Payment toDomain(PaymentRequestDto dto, User paidBy, User paidTo, Group group) {
+  public static Payment toDomain(PaymentRequestDto dto, User paidBy, User paidTo) {
     return Payment.builder()
             .paidBy(paidBy)
             .paidTo(paidTo)
-            .group(group)
             .amount(dto.amount())
             .paymentDate(dto.paymentDate())
             .notes(dto.notes())
@@ -27,8 +26,6 @@ public class PaymentMapper {
             payment.getPaidBy().getName(),
             payment.getPaidTo().getUserId(),
             payment.getPaidTo().getName(),
-            payment.getGroup().getGroupId(),
-            payment.getGroup().getName(),
             payment.getAmount(),
             payment.getPaymentDate(),
             payment.getNotes()
