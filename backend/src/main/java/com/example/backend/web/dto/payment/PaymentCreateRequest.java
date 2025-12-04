@@ -6,7 +6,6 @@ import java.time.LocalDate;
 public record PaymentCreateRequest(
         Long paidBy,
         Long paidTo,
-        Long groupId,
         BigDecimal amount,
         LocalDate paymentDate,
         String notes

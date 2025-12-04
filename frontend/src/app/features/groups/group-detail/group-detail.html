@@ -11,11 +11,16 @@
     </div>
   </nav>
 
+  <div *ngIf="isGroupSettled()" class="alert alert-warning">
+    <strong>⚠️ Settled Group</strong>
+    <p>This group has been settled. No new expenses or members can be added.</p>
+  </div>
+
   <div class="action-buttons">
-    <button class="btn-action primary" (click)="openAddExpenseModal()">
-      <span class="icon">💰</span> Add Expense
-    </button>
-    <button class="btn-action secondary" (click)="openAddMemberModal()">
+  <button class="btn-action primary" (click)="openAddExpenseModal()" [disabled]="isGroupSettled()">
+    <span class="icon">➕</span> Add Expense
+  </button>
+    <button class="btn-action secondary" (click)="openAddMemberModal()" [disabled]="isGroupSettled()">
       <span class="icon">➕</span> Add Member
     </button>
   </div>

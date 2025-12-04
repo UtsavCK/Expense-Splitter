@@ -135,16 +135,13 @@
         <div class="card-content">
           <h3>{{ group.name }}</h3>
           <p class="text-muted">Created {{ group.createdAt | date:'mediumDate' }}</p>
-          <span class="badge">Active</span>
+          <span class="badge" [ngClass]="isGroupSettled(group) ? 'settled' : 'active'">
+            {{ getGroupStatusBadge(group) }}
+          </span>
+          <div *ngIf="isGroupSettled(group)" class="settled-warning">
+            ⚠️ This group has been settled. No new expenses can be added.
+          </div>
         </div>
-      </div>
-      <div *ngIf="groups.length === 0" class="empty-state">
-        <span class="icon xlarge">📁</span>
-        <h3>No groups yet</h3>
-        <p>Create your first group to start splitting expenses</p>
-        <button class="btn-primary" (click)="openCreateGroupModal()">
-          <span class="icon">➕</span> Create Group
-        </button>
       </div>
     </div>
 

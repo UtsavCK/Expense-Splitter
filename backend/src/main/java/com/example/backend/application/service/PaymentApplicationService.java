@@ -21,10 +21,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional
 public class PaymentApplicationService implements PaymentUseCase {
-
   private final PaymentRepository paymentRepository;
   private final UserRepository userRepository;
-  private final GroupRepository groupRepository;
 
   @Override
   public PaymentResponseDto recordPayment(PaymentRequestDto dto) {
@@ -32,14 +30,16 @@ public class PaymentApplicationService implements PaymentUseCase {
             .orElseThrow(() -> new IllegalArgumentException("paidBy user not found!"));
     User paidTo = userRepository.findById(dto.paidTo())
             .orElseThrow(() -> new IllegalArgumentException("paidTo user not found!"));
-    Group group = groupRepository.findById(dto.groupId())
-            .orElseThrow(() -> new IllegalArgumentException("group not found!"));
-//    if (!group.hasMember(paidBy) || !group.hasMember(paidTo)) {
-//      throw new IllegalStateException("Both users must be in the group to make payments");
-//    }
 
+    // Create payment without group association
+    Payment domainPayment = Payment.builder()
+            .paidBy(paidBy)
+            .paidTo(paidTo)
+            .amount(dto.amount())
+            .paymentDate(dto.paymentDate())
+            .notes(dto.notes())
+            .build();
 
-    Payment domainPayment = PaymentMapper.toDomain(dto, paidBy, paidTo, group);
     Payment saved = paymentRepository.save(domainPayment);
     return PaymentMapper.toDto(saved);
   }
@@ -56,14 +56,6 @@ public class PaymentApplicationService implements PaymentUseCase {
   @Transactional(readOnly = true)
   public List<PaymentResponseDto> getPaymentsToUser(Long userId) {
     return paymentRepository.findByPaidTo(userId).stream()
-            .map(PaymentMapper::toDto)
-            .toList();
-  }
-
-  @Override
-  @Transactional(readOnly = true)
-  public List<PaymentResponseDto> getPaymentsByGroup(Long groupId) {
-    return paymentRepository.findByGroup(groupId).stream()
             .map(PaymentMapper::toDto)
             .toList();
   }

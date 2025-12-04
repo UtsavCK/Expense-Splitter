@@ -6,6 +6,7 @@ import com.example.backend.web.dto.expense.*;
 import com.example.backend.web.mapper.ExpenseWebMapper;
 import com.example.backend.web.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +16,6 @@ import java.util.List;
 @RequestMapping("/api/expenses")
 @RequiredArgsConstructor
 public class ExpenseController {
-
   private final ExpenseUseCase expenseService;
   private final AuthorizationDomainService authService;
 
@@ -24,12 +24,17 @@ public class ExpenseController {
           @RequestBody ExpenseCreateRequest req,
           @CurrentUser Long userId
   ) {
-    // Check if user is a member of the group
-    authService.requireGroupAccess(userId, req.groupId(), "add expenses");
+    try {
+      authService.requireGroupAccess(userId, req.groupId(), "add expenses");
 
-    var dto = ExpenseWebMapper.toApplication(req);
-    var created = expenseService.addExpense(dto);
-    return ResponseEntity.ok(ExpenseWebMapper.toWeb(created));
+      var dto = ExpenseWebMapper.toApplication(req);
+      var created = expenseService.addExpense(dto);
+      return ResponseEntity.ok(ExpenseWebMapper.toWeb(created));
+    } catch (IllegalStateException e) {
+      // Catch settlement error and return 409 Conflict
+      return ResponseEntity.status(HttpStatus.CONFLICT)
+              .build();
+    }
   }
 
   @GetMapping("/group/{groupId}")

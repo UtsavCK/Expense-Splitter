@@ -33,13 +33,11 @@ export class GroupDetailComponent implements OnInit {
   loading = true;
   activeTab = 'expenses';
   
-  // Modals
   showAddExpenseModal = false;
   showAddMemberModal = false;
   showConfirmModal = false;
   confirmModalData: any = null;
   
-  // Add expense form
   newExpense = {
     description: '',
     amount: 0,
@@ -48,14 +46,12 @@ export class GroupDetailComponent implements OnInit {
     participants: [] as { userId: number; userName: string; shareAmount: number; splitType: string }[]
   };
 
-  // Add member form
   newMemberEmail = '';
   newMemberUserId = 0;
   useEmailForMember = true;
   userSearchResults: UserSearchResult[] = [];
   searchSubject = new Subject<string>();
   
-  // Temp participant
   tempParticipant = {
     userId: 0,
     shareAmount: 0
@@ -124,6 +120,10 @@ export class GroupDetailComponent implements OnInit {
   }
 
   openAddExpenseModal(): void {
+    if (this.group?.isSettled) {
+      this.showNotification('Cannot add expenses to a settled group', 'error');
+      return;
+    }
     this.showAddExpenseModal = true;
   }
 
@@ -204,7 +204,11 @@ export class GroupDetailComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error creating expense:', error);
-        this.showNotification(error.error?.message || 'Failed to add expense', 'error');
+        if (error.status === 409) {
+          this.showNotification('Cannot add expenses to a settled group', 'error');
+        } else {
+          this.showNotification(error.error?.message || 'Failed to add expense', 'error');
+        }
       }
     });
   }
@@ -279,7 +283,6 @@ export class GroupDetailComponent implements OnInit {
     }
   }
 
-  // ✅ FIXED: Better confirmation system
   confirmRemoveMember(userId: number, userName: string): void {
     const currentUser = this.authService.getCurrentUser();
     const isSelf = currentUser?.userId === userId;
@@ -302,7 +305,6 @@ export class GroupDetailComponent implements OnInit {
         
         if (isSelf) {
           this.showNotification('You have left the group', 'success');
-          // ✅ FIXED: Navigate to dashboard instead of triggering logout
           setTimeout(() => this.router.navigate(['/']), 500);
         } else {
           this.showNotification('Member removed successfully', 'success');
@@ -342,6 +344,10 @@ export class GroupDetailComponent implements OnInit {
     });
   }
 
+  isGroupSettled(): boolean {
+    return this.group?.isSettled || false;
+  }
+
   closeConfirmModal(): void {
     this.showConfirmModal = false;
     this.confirmModalData = null;
@@ -351,7 +357,6 @@ export class GroupDetailComponent implements OnInit {
     this.authService.logout();
   }
 
-  // ✅ Toast notification system
   private showNotification(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;

@@ -3,6 +3,7 @@ export interface Group {
   name: string;
   createdByUserId: number;
   createdAt: string;
+  isSettled: boolean;
 }
 
 export interface GroupMember {

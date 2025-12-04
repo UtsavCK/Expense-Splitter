@@ -1,5 +1,6 @@
 package com.example.backend.web.security;
 
+import com.example.backend.infrastructure.security.CustomUserDetails;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,11 +27,22 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
           WebDataBinderFactory binderFactory
   ) {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
     if (authentication == null || !authentication.isAuthenticated()) {
       throw new IllegalStateException("User not authenticated");
     }
 
-    return (Long) authentication.getPrincipal();
+    Object principal = authentication.getPrincipal();
+
+    // If principal is CustomUserDetails, extract the userId
+    if (principal instanceof CustomUserDetails) {
+      return ((CustomUserDetails) principal).getUserId();
+    }
+
+    // Fallback: if principal is a Long (shouldn't happen in normal cases)
+    if (principal instanceof Long) {
+      return principal;
+    }
+
+    throw new IllegalStateException("Cannot extract userId from principal: " + principal.getClass().getSimpleName());
   }
 }

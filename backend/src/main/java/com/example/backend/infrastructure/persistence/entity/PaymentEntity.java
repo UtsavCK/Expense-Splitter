@@ -28,10 +28,6 @@ public class PaymentEntity {
   @JoinColumn(name = "paid_to") // foreignKey = @ForeignKey(name = "fk_payment_to_user")
   private UserEntity paidTo;
 
-  @ManyToOne
-  @JoinColumn(name = "group_id")
-  private GroupEntity group;
-
   @Column(precision = 12, scale = 2)
   private BigDecimal amount;
 

@@ -9,7 +9,7 @@ import { AuthService } from '../../../core/services/auth-service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './register.html',
-  styleUrls: ['./register.css']
+  styleUrls: ['./register.css'],
 })
 export class RegisterComponent {
   name = '';
@@ -17,11 +17,9 @@ export class RegisterComponent {
   password = '';
   errorMessage = '';
   loading = false;
+  passwordVisible = false;
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  constructor(private authService: AuthService, private router: Router) {}
 
   register(): void {
     if (!this.name || !this.email || !this.password) {
@@ -39,7 +37,11 @@ export class RegisterComponent {
       error: (error) => {
         this.errorMessage = error.error?.message || 'Registration failed. Please try again.';
         this.loading = false;
-      }
+      },
     });
+  }
+
+  togglePasswordVisibility(): void {
+    this.passwordVisible = !this.passwordVisible;
   }
 }

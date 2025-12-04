@@ -15,27 +15,24 @@ import java.util.stream.Collectors;
 @Slf4j
 public class BalanceDomainService {
 
-  /**
-   * Calculate net balances from expenses and payments
-   * Core algorithm:
-   * 1. For each expense, payer is owed by each participant
-   * 2. Payments reduce debts
-   * 3. Net balances show final state
-   */
   public List<Balance> calculateBalances(
+          Long groupId,
           List<Expense> expenses,
           List<ExpenseParticipant> allParticipants,
           List<Payment> payments
   ) {
-    // Map to track net balances: Key = "fromUserId->toUserId", Value = amount
-    // This is DIRECTIONAL - we track who owes whom
+    log.info("=== BalanceDomainService.calculateBalances() ===");
+    log.info("Input: groupId={}, expenses={}, participants={}, payments={}",
+            groupId, expenses.size(), allParticipants.size(), payments.size());
+
     Map<String, BigDecimal> netBalances = new HashMap<>();
 
-    // Step 1: Process expenses
     for (Expense expense : expenses) {
       Long payerId = expense.getPaidBy().getUserId();
+      Long expenseGroupId = expense.getGroup().getGroupId();
+      log.debug("Processing expense {}: paidBy={}, groupId={}, amount={}",
+              expense.getExpenseId(), payerId, expenseGroupId, expense.getAmount());
 
-      // Get participants for this expense
       List<ExpenseParticipant> expenseParticipants = allParticipants.stream()
               .filter(p -> p.getExpense().getExpenseId().equals(expense.getExpenseId()))
               .toList();
@@ -43,30 +40,30 @@ public class BalanceDomainService {
       for (ExpenseParticipant participant : expenseParticipants) {
         Long participantId = participant.getUser().getUserId();
         BigDecimal participantShare = participant.getShareAmount();
-
-        // Skip if payer is also participant (they don't owe themselves)
         if (payerId.equals(participantId)) {
+          log.debug("  Skipping participant {} (is payer)", participantId);
           continue;
         }
-
-        // Participant owes payer their share
-        // Use DIRECTIONAL key: participant->payer
-        String key = participantId + "->" + payerId;
+        String key = participantId + "->" + payerId + ":" + expenseGroupId;
+        log.debug("  Adding balance key: {} amount: {}", key, participantShare);
         netBalances.merge(key, participantShare, BigDecimal::add);
       }
     }
 
-    // Step 2: Process payments (reduce debts)
+    log.info("After expenses, netBalances has {} entries", netBalances.size());
+    netBalances.forEach((k, v) -> log.debug("  {} = {}", k, v));
+
     for (Payment payment : payments) {
       Long fromUserId = payment.getPaidBy().getUserId();
       Long toUserId = payment.getPaidTo().getUserId();
-
-      // Payment reduces the debt from->to
-      String key = fromUserId + "->" + toUserId;
+      String key = fromUserId + "->" + toUserId + ":";
+      log.debug("Subtracting payment {} for key: {}", payment.getAmount(), key);
       netBalances.merge(key, payment.getAmount().negate(), BigDecimal::add);
     }
 
-    // Step 3: Consolidate bidirectional debts
+    log.info("After payments, netBalances has {} entries", netBalances.size());
+    netBalances.forEach((k, v) -> log.debug("  {} = {}", k, v));
+
     Map<String, BigDecimal> consolidated = new HashMap<>();
     Set<String> processed = new HashSet<>();
 
@@ -76,99 +73,127 @@ public class BalanceDomainService {
         continue;
       }
 
-      String[] parts = key.split("->");
-      Long userId1 = Long.parseLong(parts[0]);
-      Long userId2 = Long.parseLong(parts[1]);
-
-      // Get debt in both directions
-      BigDecimal debt12 = netBalances.getOrDefault(userId1 + "->" + userId2, BigDecimal.ZERO);
-      BigDecimal debt21 = netBalances.getOrDefault(userId2 + "->" + userId1, BigDecimal.ZERO);
-
-      // Calculate net debt
-      BigDecimal netDebt = debt12.subtract(debt21);
-
-      // Mark both directions as processed
-      processed.add(userId1 + "->" + userId2);
-      processed.add(userId2 + "->" + userId1);
-
-      // Store consolidated debt if non-zero
-      if (netDebt.compareTo(BigDecimal.ZERO) != 0) {
-        // Use consistent key (smaller ID first)
-        String consolidatedKey = getBalanceKey(userId1, userId2);
-
-        if (netDebt.compareTo(BigDecimal.ZERO) > 0) {
-          // userId1 owes userId2
-          consolidated.put(consolidatedKey, netDebt.abs());
-        } else {
-          // userId2 owes userId1 (debt is negative, so flip)
-          consolidated.put(consolidatedKey, netDebt.abs());
+      try {
+        // Parse composite key: userId1->userId2:groupId
+        String[] parts = key.split(":");
+        if (parts.length != 2) {
+          log.error("Invalid key format: {} - expected format: userId->userId:groupId", key);
+          continue;
         }
-      }
-    }
 
-    // Step 4: Convert to Balance objects
-    List<Balance> balances = new ArrayList<>();
+        String userPart = parts[0];
+        Long keyGroupId = Long.parseLong(parts[1]);
 
-    for (Map.Entry<String, BigDecimal> entry : consolidated.entrySet()) {
-      BigDecimal amount = entry.getValue().setScale(2, RoundingMode.HALF_UP);
+        String[] userIds = userPart.split("->");
+        if (userIds.length != 2) {
+          log.error("Invalid user part format: {} - expected format: userId->userId", userPart);
+          continue;
+        }
 
-      // Only include non-zero balances
-      if (amount.compareTo(BigDecimal.ZERO) != 0) {
-        String[] userIds = entry.getKey().split("-");
         Long userId1 = Long.parseLong(userIds[0]);
         Long userId2 = Long.parseLong(userIds[1]);
 
-        // Determine direction based on original net debt
-        BigDecimal debt12 = netBalances.getOrDefault(userId1 + "->" + userId2, BigDecimal.ZERO);
-        BigDecimal debt21 = netBalances.getOrDefault(userId2 + "->" + userId1, BigDecimal.ZERO);
+        BigDecimal debt12 = netBalances.getOrDefault(userId1 + "->" + userId2 + ":" + keyGroupId, BigDecimal.ZERO);
+        BigDecimal debt21 = netBalances.getOrDefault(userId2 + "->" + userId1 + ":" + keyGroupId, BigDecimal.ZERO);
         BigDecimal netDebt = debt12.subtract(debt21);
 
-        if (netDebt.compareTo(BigDecimal.ZERO) > 0) {
-          // userId1 owes userId2
-          balances.add(Balance.builder()
-                  .fromUserId(userId1)
-                  .toUserId(userId2)
-                  .amount(amount)
-                  .build());
-        } else {
-          // userId2 owes userId1
-          balances.add(Balance.builder()
-                  .fromUserId(userId2)
-                  .toUserId(userId1)
-                  .amount(amount)
-                  .build());
+        log.debug("Consolidating: {}->{}:{} debt12={}, debt21={}, netDebt={}",
+                userId1, userId2, keyGroupId, debt12, debt21, netDebt);
+
+        processed.add(userId1 + "->" + userId2 + ":" + keyGroupId);
+        processed.add(userId2 + "->" + userId1 + ":" + keyGroupId);
+
+        if (netDebt.compareTo(BigDecimal.ZERO) != 0) {
+          String consolidatedKey = getBalanceKey(userId1, userId2, keyGroupId);
+          consolidated.put(consolidatedKey, netDebt.abs());
+        }
+      } catch (Exception e) {
+        log.error("Error processing key: {}", key, e);
+      }
+    }
+
+    log.info("Consolidated has {} entries", consolidated.size());
+    consolidated.forEach((k, v) -> log.debug("  {} = {}", k, v));
+
+    List<Balance> balances = new ArrayList<>();
+    for (Map.Entry<String, BigDecimal> entry : consolidated.entrySet()) {
+      BigDecimal amount = entry.getValue().setScale(2, RoundingMode.HALF_UP);
+      if (amount.compareTo(BigDecimal.ZERO) != 0) {
+        try {
+          String[] parts = entry.getKey().split(":");
+          String userPart = parts[0];
+          Long keyGroupId = Long.parseLong(parts[1]);
+
+          String[] userIds = userPart.split("-");
+          Long userId1 = Long.parseLong(userIds[0]);
+          Long userId2 = Long.parseLong(userIds[1]);
+
+          BigDecimal debt12 = netBalances.getOrDefault(userId1 + "->" + userId2 + ":" + keyGroupId, BigDecimal.ZERO);
+          BigDecimal debt21 = netBalances.getOrDefault(userId2 + "->" + userId1 + ":" + keyGroupId, BigDecimal.ZERO);
+          BigDecimal netDebt = debt12.subtract(debt21);
+
+          if (netDebt.compareTo(BigDecimal.ZERO) > 0) {
+            balances.add(Balance.builder()
+                    .fromUserId(userId1)
+                    .toUserId(userId2)
+                    .groupId(keyGroupId)
+                    .amount(amount)
+                    .build());
+            log.debug("Created balance: {} -> {} = {}", userId1, userId2, amount);
+          } else {
+            balances.add(Balance.builder()
+                    .fromUserId(userId2)
+                    .toUserId(userId1)
+                    .groupId(keyGroupId)
+                    .amount(amount)
+                    .build());
+            log.debug("Created balance: {} -> {} = {}", userId2, userId1, amount);
+          }
+        } catch (Exception e) {
+          log.error("Error creating balance for key: {}", entry.getKey(), e);
         }
       }
     }
 
+    log.info("Returning {} balances", balances.size());
     return balances;
   }
 
-  /**
-   * Create consistent key for user pair (always smaller ID first)
-   */
-  private String getBalanceKey(Long userId1, Long userId2) {
+  private String getBalanceKey(Long userId1, Long userId2, Long groupId) {
     if (userId1.compareTo(userId2) < 0) {
-      return userId1 + "-" + userId2;
+      return userId1 + "-" + userId2 + ":" + groupId;
     } else {
-      return userId2 + "-" + userId1;
+      return userId2 + "-" + userId1 + ":" + groupId;
     }
   }
 
-  /**
-   * Simplify balances using debt simplification algorithm
-   * Minimizes number of transactions needed
-   */
   public List<Balance> simplifyBalances(List<Balance> balances) {
-    // Calculate net position for each user
-    Map<Long, BigDecimal> netPosition = new HashMap<>();
+    // Group balances by groupId for independent simplification
+    Map<Long, List<Balance>> balancesByGroup = balances.stream()
+            .collect(Collectors.groupingBy(Balance::getGroupId));
 
+    List<Balance> allSimplified = new ArrayList<>();
+
+    for (List<Balance> groupBalances : balancesByGroup.values()) {
+      allSimplified.addAll(simplifyBalancesForGroup(groupBalances));
+    }
+
+    return allSimplified;
+  }
+
+  private List<Balance> simplifyBalancesForGroup(List<Balance> balances) {
+    if (balances.isEmpty()) {
+      return new ArrayList<>();
+    }
+
+    Long groupId = balances.get(0).getGroupId();
+
+    Map<Long, BigDecimal> netPosition = new HashMap<>();
     for (Balance balance : balances) {
       netPosition.merge(balance.getFromUserId(), balance.getAmount().negate(), BigDecimal::add);
       netPosition.merge(balance.getToUserId(), balance.getAmount(), BigDecimal::add);
     }
 
-    // Separate debtors and creditors
     List<Map.Entry<Long, BigDecimal>> debtors = netPosition.entrySet().stream()
             .filter(e -> e.getValue().compareTo(BigDecimal.ZERO) < 0)
             .collect(Collectors.toList());
@@ -177,22 +202,19 @@ public class BalanceDomainService {
             .filter(e -> e.getValue().compareTo(BigDecimal.ZERO) > 0)
             .collect(Collectors.toList());
 
-    // Greedy algorithm: match debtors with creditors
     List<Balance> simplified = new ArrayList<>();
     int i = 0, j = 0;
-
     while (i < debtors.size() && j < creditors.size()) {
       Long debtorId = debtors.get(i).getKey();
       BigDecimal debt = debtors.get(i).getValue().abs();
-
       Long creditorId = creditors.get(j).getKey();
       BigDecimal credit = creditors.get(j).getValue();
-
       BigDecimal transferAmount = debt.min(credit);
 
       simplified.add(Balance.builder()
               .fromUserId(debtorId)
               .toUserId(creditorId)
+              .groupId(groupId)
               .amount(transferAmount.setScale(2, RoundingMode.HALF_UP))
               .build());
 
