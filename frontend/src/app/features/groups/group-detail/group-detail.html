@@ -25,6 +25,38 @@
     </button>
   </div>
 
+  <!-- Export Section -->
+  <div class="export-section">
+    <h3>📥 Export Data</h3>
+
+    <div *ngIf="exportError" class="alert alert-error">
+      <strong>Export Error:</strong> {{ exportError }}
+    </div>
+    
+    <div class="export-buttons">
+      <button class="btn-secondary" (click)="exportBalancesCSV()" [disabled]="isExporting">
+        <span class="icon">📊</span>
+        {{ isExporting ? 'Exporting...' : 'Export Balances' }}
+      </button>
+      <button class="btn-secondary" (click)="exportExpensesCSV()" [disabled]="isExporting">
+        <span class="icon">💰</span>
+        {{ isExporting ? 'Exporting...' : 'Export Expenses' }}
+      </button>
+      <button class="btn-secondary" (click)="exportSummaryCSV()" [disabled]="isExporting">
+        <span class="icon">📋</span>
+        {{ isExporting ? 'Exporting...' : 'Export Summary' }}
+      </button>
+      <button class="btn-secondary" (click)="exportAllData()" [disabled]="isExporting">
+        <span class="icon">📦</span>
+        {{ isExporting ? 'Exporting...' : 'Export All' }}
+      </button>
+    </div>
+
+    <p class="help-text">
+      💡 Export your group data for record-keeping, auditing, or analysis in Excel.
+    </p>
+  </div>
+
   <div class="tabs">
     <button class="tab" [class.active]="activeTab === 'expenses'" (click)="setActiveTab('expenses')">
       <span class="icon">💳</span> Expenses ({{ expenses.length }})

@@ -14,6 +14,7 @@ import { GroupBalanceSummary } from '../../../core/models/balance';
 import { GroupSettlementPlan } from '../../../core/models/settlement';
 import { User, UserSearchResult } from '../../../core/models/user';
 import { forkJoin, debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+import { ExportService } from '../../../core/services/export';
 
 @Component({
   selector: 'app-group-detail',
@@ -37,7 +38,10 @@ export class GroupDetailComponent implements OnInit {
   showAddMemberModal = false;
   showConfirmModal = false;
   confirmModalData: any = null;
-  
+
+  isExporting = false;
+  exportError: string = '';
+
   newExpense = {
     description: '',
     amount: 0,
@@ -65,6 +69,7 @@ export class GroupDetailComponent implements OnInit {
     private expenseService: ExpenseService,
     private balanceService: BalanceService,
     private settlementService: SettlementService,
+    private exportService: ExportService,
     private userService: UserService
   ) {
     this.searchSubject.pipe(
@@ -355,6 +360,86 @@ export class GroupDetailComponent implements OnInit {
 
   logout(): void {
     this.authService.logout();
+  }
+
+    exportBalancesCSV(): void {
+    this.isExporting = true;
+    this.exportError = '';
+
+    this.exportService.exportBalancesAsCSV(this.groupId).subscribe({
+      next: (blob: Blob) => {
+        this.exportService.downloadFile(blob, `balances_${this.groupId}.csv`);
+        this.showNotification('Balances exported successfully!', 'success');
+        this.isExporting = false;
+      },
+      error: (error) => {
+        console.error('Error exporting balances:', error);
+        this.exportError = error.error?.message || 'Failed to export balances';
+        this.showNotification(this.exportError, 'error');
+        this.isExporting = false;
+      }
+    });
+  }
+
+  exportExpensesCSV(): void {
+    this.isExporting = true;
+    this.exportError = '';
+
+    this.exportService.exportExpensesAsCSV(this.groupId).subscribe({
+      next: (blob: Blob) => {
+        this.exportService.downloadFile(blob, `expenses_${this.groupId}.csv`);
+        this.showNotification('Expenses exported successfully!', 'success');
+        this.isExporting = false;
+      },
+      error: (error) => {
+        console.error('Error exporting expenses:', error);
+        this.exportError = error.error?.message || 'Failed to export expenses';
+        this.showNotification(this.exportError, 'error');
+        this.isExporting = false;
+      }
+    });
+  }
+
+  exportSummaryCSV(): void {
+    this.isExporting = true;
+    this.exportError = '';
+
+    this.exportService.exportSummaryAsCSV(this.groupId).subscribe({
+      next: (blob: Blob) => {
+        this.exportService.downloadFile(blob, `summary_${this.groupId}.csv`);
+        this.showNotification('Summary exported successfully!', 'success');
+        this.isExporting = false;
+      },
+      error: (error) => {
+        console.error('Error exporting summary:', error);
+        this.exportError = error.error?.message || 'Failed to export summary';
+        this.showNotification(this.exportError, 'error');
+        this.isExporting = false;
+      }
+    });
+  }
+
+  exportAllData(): void {
+    this.isExporting = true;
+    this.exportError = '';
+
+    Promise.all([
+      this.exportService.exportBalancesAsCSV(this.groupId).toPromise(),
+      this.exportService.exportExpensesAsCSV(this.groupId).toPromise(),
+      this.exportService.exportSummaryAsCSV(this.groupId).toPromise()
+    ]).then((blobs) => {
+      if (blobs[0]) this.exportService.downloadFile(blobs[0], `balances_${this.groupId}.csv`);
+      if (blobs[1]) this.exportService.downloadFile(blobs[1], `expenses_${this.groupId}.csv`);
+      if (blobs[2]) this.exportService.downloadFile(blobs[2], `summary_${this.groupId}.csv`);
+      
+      this.showNotification('All exports downloaded successfully!', 'success');
+      this.isExporting = false;
+    }).catch((error) => {
+      console.error('Error exporting data:', error);
+      this.exportError = 'Failed to export some files';
+      this.showNotification(this.exportError, 'error');
+      this.isExporting = false;
+    });
   }
 
   private showNotification(message: string, type: 'success' | 'error' | 'info' = 'info'): void {

@@ -344,6 +344,69 @@
   margin-bottom: 1rem;
 }
 
+.export-section {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+}
+
+.export-section h3 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.btn-secondary {
+  padding: 10px 16px;
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #e0e0e0;
+  border-color: #999;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary .icon {
+  font-size: 16px;
+}
+
+.alert-error {
+  background: #fee;
+  color: #c00;
+  padding: 12px;
+  border-radius: 4px;
+  border-left: 4px solid #c00;
+  margin-bottom: 15px;
+}
+
+.help-text {
+  color: #666;
+  font-size: 13px;
+  margin: 10px 0 0 0;
+}
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);
