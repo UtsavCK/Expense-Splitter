@@ -14,31 +14,6 @@
     </div>
   </nav>
 
-  <!-- Summary Cards with Real Stats -->
-  <div class="summary-section" *ngIf="activeTab === 'overview' && stats">
-    <div class="summary-card positive">
-      <div class="summary-icon">📥</div>
-      <div class="summary-content">
-        <div class="summary-label">You are owed</div>
-        <div class="summary-amount">${{ stats.totalOwed.toFixed(2) }}</div>
-      </div>
-    </div>
-    <div class="summary-card negative">
-      <div class="summary-icon">📤</div>
-      <div class="summary-content">
-        <div class="summary-label">You paid</div>
-        <div class="summary-amount">${{ stats.totalPaid.toFixed(2) }}</div>
-      </div>
-    </div>
-    <div class="summary-card" [ngClass]="stats.netBalance >= 0 ? 'positive' : 'negative'">
-      <div class="summary-icon">💵</div>
-      <div class="summary-content">
-        <div class="summary-label">Net Balance</div>
-        <div class="summary-amount">${{ stats.netBalance.toFixed(2) }}</div>
-      </div>
-    </div>
-  </div>
-
   <!-- Stats Row -->
   <div class="stats-row" *ngIf="stats">
     <div class="stat-item">
@@ -83,6 +58,31 @@
     <button class="tab" [class.active]="activeTab === 'payments'" (click)="setActiveTab('payments')">
       <span class="icon">💸</span> Payments ({{ payments.length }})
     </button>
+  </div>
+
+  <!-- Summary Cards with Real Stats -->
+  <div class="summary-section" *ngIf="activeTab === 'overview' && stats">
+    <div class="summary-card positive">
+      <div class="summary-icon">📥</div>
+      <div class="summary-content">
+        <div class="summary-label">You are owed</div>
+        <div class="summary-amount">${{ stats.totalOwed.toFixed(2) }}</div>
+      </div>
+    </div>
+    <div class="summary-card negative">
+      <div class="summary-icon">📤</div>
+      <div class="summary-content">
+        <div class="summary-label">You paid</div>
+        <div class="summary-amount">${{ stats.totalPaid.toFixed(2) }}</div>
+      </div>
+    </div>
+    <div class="summary-card" [ngClass]="stats.netBalance >= 0 ? 'positive' : 'negative'">
+      <div class="summary-icon">💵</div>
+      <div class="summary-content">
+        <div class="summary-label">Net Balance</div>
+        <div class="summary-amount">${{ stats.netBalance.toFixed(2) }}</div>
+      </div>
+    </div>
   </div>
 
   <div class="content" *ngIf="!loading">

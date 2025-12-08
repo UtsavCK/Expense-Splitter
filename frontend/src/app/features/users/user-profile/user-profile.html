@@ -77,9 +77,18 @@
 
         <div class="danger-zone">
           <h3>Danger Zone</h3>
-          <p>Once you delete your account, there is no going back.</p>
-          <button class="btn-danger" (click)="deleteAccount()">
-            <span class="icon">🗑️</span> Delete Account
+          <div *ngIf="!canDelete" class="alert alert-warning">
+            <strong>⚠️ Cannot Delete Account</strong>
+            <p>{{ deletionReason }}</p>
+            <p class="text-muted">You must settle all balances and groups before deleting your account.</p>
+          </div>
+          
+          <button 
+            class="btn-danger" 
+            (click)="deleteAccount()"
+            [disabled]="!canDelete || loading"
+          >
+            {{ loading ? 'Deleting...' : 'Delete Account' }}
           </button>
         </div>
       </div>

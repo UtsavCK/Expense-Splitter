@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { User, UserSearchResult, UserStats } from '../models/user';
 import { environment } from '../../../environments/environment.dev';
+import { DeletionEligibilityDto } from '../models/deletionEligibility';
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
@@ -14,12 +15,24 @@ export class UserService {
     return this.http.get<User>(`${this.apiUrl}/me`);
   }
 
-  updateProfile(name: string, email: string, password?: string): Observable<User> {
+  updateProfile(
+    name: string,
+    email: string,
+    currentPassword?: string,
+    newPassword?: string
+  ): Observable<User> {
     const body: any = { name, email };
-    if (password) {
-      body.password = password;
+    if (currentPassword) {
+      body.currentPassword = currentPassword;
+    }
+    if (newPassword) {
+      body.newPassword = newPassword;
     }
     return this.http.put<User>(`${this.apiUrl}/me`, body);
+  }
+
+  canDeleteAccount(): Observable<DeletionEligibilityDto> {
+    return this.http.get<DeletionEligibilityDto>(`${this.apiUrl}/me/can-delete`);
   }
 
   deleteAccount(): Observable<void> {

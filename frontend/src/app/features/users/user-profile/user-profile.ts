@@ -17,6 +17,8 @@ export class UserProfileComponent implements OnInit {
   user: User | null = null;
   loading = false;
   editing = false;
+  canDelete = false;
+  deletionReason = '';
 
   editForm = {
     name: '',
@@ -34,6 +36,7 @@ export class UserProfileComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProfile();
+    this.checkDeletionEligibility();
   }
 
   loadProfile(): void {
@@ -96,7 +99,29 @@ export class UserProfileComponent implements OnInit {
       });
   }
 
+    checkDeletionEligibility(): void {
+    this.userService.canDeleteAccount().subscribe({
+      next: (eligibility) => {
+        this.canDelete = eligibility.canDelete;
+        this.deletionReason = eligibility.reason || '';
+      },
+      error: (error) => {
+        console.error('Error checking deletion eligibility:', error);
+        this.canDelete = false;
+      }
+    });
+  }
+
   deleteAccount(): void {
+
+    if (!this.canDelete) {
+      this.showNotification(
+        'Cannot delete account: ' + this.deletionReason,
+        'error'
+      );
+      return;
+    }
+
     const confirmation = prompt(
       'Are you sure you want to delete your account? Type "DELETE" to confirm.'
     );
@@ -122,5 +147,17 @@ export class UserProfileComponent implements OnInit {
 
   logout(): void {
     this.authService.logout();
+  }
+
+  private showNotification(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => document.body.removeChild(toast), 300);
+    }, 3000);
   }
 }
